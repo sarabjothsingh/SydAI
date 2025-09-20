@@ -19,6 +19,10 @@ const Navbar = () => {
     navigate("/app");
   };
 
+  const handleSignUp = () => {
+    navigate("/login?mode=signup");
+  };
+
   return (
     <nav className="fixed top-0 right-0 z-50 p-4">
       <div className="flex items-center justify-end">
@@ -48,6 +52,12 @@ const Navbar = () => {
             className="border-primary/30 hover:border-primary hover:bg-primary/10"
           >
             Login
+          </Button>
+          <Button
+            onClick={handleSignUp}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground"
+          >
+            Sign Up
           </Button>
         </div>
 
@@ -83,13 +93,21 @@ const Navbar = () => {
           >
             Meet the Team
           </button>
-          <Button
-            onClick={handleLogin}
-            variant="outline"
-            className="w-full mt-2 border-primary/30 hover:border-primary hover:bg-primary/10"
-          >
-            Login
-          </Button>
+          <div className="flex space-x-2 mt-2">
+            <Button
+              onClick={handleLogin}
+              variant="outline"
+              className="flex-1 border-primary/30 hover:border-primary hover:bg-primary/10"
+            >
+              Login
+            </Button>
+            <Button
+              onClick={handleSignUp}
+              className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+              Sign Up
+            </Button>
+          </div>
         </div>
       )}
     </nav>

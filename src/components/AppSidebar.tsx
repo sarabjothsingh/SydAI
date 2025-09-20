@@ -464,28 +464,7 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
 
-        {/* Vector Database */}
-        {!collapsed && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-sm font-medium text-neutral-300">
-              Vector Database
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <div className="p-3 rounded-lg bg-neutral-800">
-                <div className="flex items-center space-x-2 mb-2">
-                  <Database className="w-4 h-4 text-green-400" />
-                  <span className="text-xs font-medium text-white">Connected to Qdrant</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                  <span className="text-xs text-neutral-400">
-                    Collection: pdf_embeddingsV3
-                  </span>
-                </div>
-              </div>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
+
 
         {/* Delete Documents */}
         {!collapsed && documents.length > 0 && (
