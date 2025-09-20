@@ -1,5 +1,264 @@
+// import { useState } from "react";
+// import { Upload, FileText, Trash2, Database, CheckCircle, AlertCircle } from "lucide-react";
+// import { Button } from "@/components/ui/button";
+// import { useToast } from "@/hooks/use-toast";
+// import {
+//   Sidebar,
+//   SidebarContent,
+//   SidebarGroup,
+//   SidebarGroupContent,
+//   SidebarGroupLabel,
+//   SidebarMenu,
+//   SidebarMenuItem,
+//   SidebarTrigger,
+//   useSidebar,
+// } from "@/components/ui/sidebar";
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from "@/components/ui/select";
+
+// interface Document {
+//   id: string;
+//   name: string;
+//   size: string;
+//   uploadDate: string;
+//   status: "processing" | "connected" | "error";
+// }
+
+// export function AppSidebar() {
+//   const { state } = useSidebar();
+//   const collapsed = state === "collapsed";
+//   const { toast } = useToast();
+//   const [documents, setDocuments] = useState<Document[]>([
+//     {
+//       id: "1",
+//       name: "research_paper.pdf",
+//       size: "2.4 MB",
+//       uploadDate: "2024-01-15",
+//       status: "connected"
+//     },
+//     {
+//       id: "2", 
+//       name: "annual_report.pdf",
+//       size: "8.7 MB",
+//       uploadDate: "2024-01-14",
+//       status: "connected"
+//     }
+//   ]);
+
+//   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+//     const files = event.target.files;
+//     if (files && files.length > 0) {
+//       const file = files[0];
+      
+//       // Validate file size (200MB limit)
+//       if (file.size > 200 * 1024 * 1024) {
+//         toast({
+//           title: "File too large",
+//           description: "Please select a file smaller than 200MB",
+//           variant: "destructive"
+//         });
+//         return;
+//       }
+
+//       // Validate file type
+//       if (!file.type.includes('pdf')) {
+//         toast({
+//           title: "Invalid file type", 
+//           description: "Please upload a PDF file",
+//           variant: "destructive"
+//         });
+//         return;
+//       }
+
+//       const newDoc: Document = {
+//         id: Date.now().toString(),
+//         name: file.name,
+//         size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+//         uploadDate: new Date().toISOString().split('T')[0],
+//         status: "processing"
+//       };
+
+//       setDocuments([...documents, newDoc]);
+      
+//       toast({
+//         title: "File uploaded",
+//         description: "Document is being processed..."
+//       });
+
+//       // Simulate processing
+//       setTimeout(() => {
+//         setDocuments(prev => prev.map(doc => 
+//           doc.id === newDoc.id ? { ...doc, status: "connected" } : doc
+//         ));
+//       }, 3000);
+//     }
+//   };
+
+//   const deleteDocument = (docId: string) => {
+//     setDocuments(documents.filter(doc => doc.id !== docId));
+//     toast({
+//       title: "Document deleted",
+//       description: "The document has been removed from your collection"
+//     });
+//   };
+
+//   const getStatusIcon = (status: Document["status"]) => {
+//     switch (status) {
+//       case "connected":
+//         return <CheckCircle className="w-4 h-4 text-success" />;
+//       case "processing":
+//         return <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />;
+//       case "error":
+//         return <AlertCircle className="w-4 h-4 text-destructive" />;
+//     }
+//   };
+
+//   return (
+//     <Sidebar className={collapsed ? "w-16" : "w-80"}>
+//       <SidebarTrigger className="m-2 self-end" />
+
+//       <SidebarContent className="p-4 space-y-6">
+//         {/* Document Upload */}
+//         <SidebarGroup>
+//           <SidebarGroupLabel className="text-sm font-medium">
+//             {!collapsed && "Document Management"}
+//           </SidebarGroupLabel>
+//           <SidebarGroupContent>
+//             <SidebarMenu>
+//               <SidebarMenuItem>
+//                 <div className="space-y-4">
+//                   {/* Upload Button */}
+//                   <label className="cursor-pointer">
+//                     <input
+//                       type="file"
+//                       accept=".pdf"
+//                       onChange={handleFileUpload}
+//                       className="hidden"
+//                     />
+//                     <div className="sidebar-item p-3 border-2 border-dashed border-border hover:border-primary/50 rounded-lg text-center transition-colors">
+//                       <Upload className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+//                       {!collapsed && (
+//                         <div>
+//                           <p className="text-sm font-medium">Upload PDF</p>
+//                           <p className="text-xs text-muted-foreground">Max 200MB</p>
+//                         </div>
+//                       )}
+//                     </div>
+//                   </label>
+//                 </div>
+//               </SidebarMenuItem>
+//             </SidebarMenu>
+//           </SidebarGroupContent>
+//         </SidebarGroup>
+
+//         {/* Document List */}
+//         {!collapsed && (
+//           <SidebarGroup>
+//             <SidebarGroupLabel className="text-sm font-medium">
+//               Uploaded Documents ({documents.length})
+//             </SidebarGroupLabel>
+//             <SidebarGroupContent>
+//               <div className="space-y-2 max-h-60 overflow-y-auto">
+//                 {documents.length === 0 ? (
+//                   <p className="text-xs text-muted-foreground text-center py-4">
+//                     No documents uploaded yet
+//                   </p>
+//                 ) : (
+//                   documents.map((doc) => (
+//                     <div
+//                       key={doc.id}
+//                       className="sidebar-item p-3 rounded-lg flex items-start justify-between group"
+//                     >
+//                       <div className="flex items-start space-x-2 min-w-0 flex-1">
+//                         <FileText className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
+//                         <div className="min-w-0 flex-1">
+//                           <p className="text-xs font-medium truncate" title={doc.name}>
+//                             {doc.name}
+//                           </p>
+//                           <p className="text-xs text-muted-foreground">{doc.size}</p>
+//                           <div className="flex items-center space-x-1 mt-1">
+//                             {getStatusIcon(doc.status)}
+//                             <span className="text-xs text-muted-foreground capitalize">
+//                               {doc.status}
+//                             </span>
+//                           </div>
+//                         </div>
+//                       </div>
+//                       <Button
+//                         size="sm"
+//                         variant="ghost"
+//                         onClick={() => deleteDocument(doc.id)}
+//                         className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-auto"
+//                       >
+//                         <Trash2 className="w-3 h-3" />
+//                       </Button>
+//                     </div>
+//                   ))
+//                 )}
+//               </div>
+//             </SidebarGroupContent>
+//           </SidebarGroup>
+//         )}
+
+//         {/* Collection Status */}
+//         {!collapsed && (
+//           <SidebarGroup>
+//             <SidebarGroupLabel className="text-sm font-medium">
+//               Vector Database
+//             </SidebarGroupLabel>
+//             <SidebarGroupContent>
+//               <div className="sidebar-item p-3 rounded-lg">
+//                 <div className="flex items-center space-x-2 mb-2">
+//                   <Database className="w-4 h-4 text-success" />
+//                   <span className="text-xs font-medium">Connected to Qdrant</span>
+//                 </div>
+//                 <div className="flex items-center space-x-2">
+//                   <div className="w-2 h-2 bg-success rounded-full"></div>
+//                   <span className="text-xs text-muted-foreground">
+//                     Collection: pdf_embeddingsV3
+//                   </span>
+//                 </div>
+//               </div>
+//             </SidebarGroupContent>
+//           </SidebarGroup>
+//         )}
+
+//         {/* Delete Documents */}
+//         {!collapsed && documents.length > 0 && (
+//           <SidebarGroup>
+//             <SidebarGroupContent>
+//               <Select>
+//                 <SelectTrigger className="w-full">
+//                   <SelectValue placeholder="Delete documents..." />
+//                 </SelectTrigger>
+//                 <SelectContent>
+//                   {documents.map((doc) => (
+//                     <SelectItem 
+//                       key={doc.id} 
+//                       value={doc.id}
+//                       onSelect={() => deleteDocument(doc.id)}
+//                     >
+//                       {doc.name}
+//                     </SelectItem>
+//                   ))}
+//                 </SelectContent>
+//               </Select>
+//             </SidebarGroupContent>
+//           </SidebarGroup>
+//         )}
+//       </SidebarContent>
+//     </Sidebar>
+//   );
+// }
+
+
 import { useState } from "react";
-import { Upload, FileText, Trash2, Database, CheckCircle, AlertCircle } from "lucide-react";
+import { Upload, FileText, Trash2, Database, CheckCircle, AlertCircle, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -110,22 +369,22 @@ export function AppSidebar() {
   const getStatusIcon = (status: Document["status"]) => {
     switch (status) {
       case "connected":
-        return <CheckCircle className="w-4 h-4 text-success" />;
+        return <CheckCircle className="w-4 h-4 text-green-400" />;
       case "processing":
-        return <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />;
+        return <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />;
       case "error":
-        return <AlertCircle className="w-4 h-4 text-destructive" />;
+        return <AlertCircle className="w-4 h-4 text-red-400" />;
     }
   };
 
   return (
-    <Sidebar className={collapsed ? "w-16" : "w-80"}>
-      <SidebarTrigger className="m-2 self-end" />
+    <Sidebar className={`${collapsed ? "w-16" : "w-80"} bg-neutral-950 border-r border-neutral-700`}>
+      <SidebarTrigger className="m-2 self-end text-neutral-400 hover:text-white" />
 
-      <SidebarContent className="p-4 space-y-6">
+      <SidebarContent className="p-4 space-y-6 flex flex-col h-full">
         {/* Document Upload */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sm font-medium">
+          <SidebarGroupLabel className="text-sm font-medium text-neutral-300">
             {!collapsed && "Document Management"}
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -140,12 +399,12 @@ export function AppSidebar() {
                       onChange={handleFileUpload}
                       className="hidden"
                     />
-                    <div className="sidebar-item p-3 border-2 border-dashed border-border hover:border-primary/50 rounded-lg text-center transition-colors">
-                      <Upload className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+                    <div className="p-3 border-2 border-dashed border-neutral-600 hover:border-blue-500 rounded-lg text-center transition-colors bg-neutral-800">
+                      <Upload className="w-6 h-6 mx-auto mb-2 text-neutral-400" />
                       {!collapsed && (
                         <div>
-                          <p className="text-sm font-medium">Upload PDF</p>
-                          <p className="text-xs text-muted-foreground">Max 200MB</p>
+                          <p className="text-sm font-medium text-white">Upload PDF</p>
+                          <p className="text-xs text-neutral-400">Max 200MB</p>
                         </div>
                       )}
                     </div>
@@ -159,31 +418,31 @@ export function AppSidebar() {
         {/* Document List */}
         {!collapsed && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-sm font-medium">
+            <SidebarGroupLabel className="text-sm font-medium text-neutral-300">
               Uploaded Documents ({documents.length})
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {documents.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-4">
+                  <p className="text-xs text-neutral-400 text-center py-4">
                     No documents uploaded yet
                   </p>
                 ) : (
                   documents.map((doc) => (
                     <div
                       key={doc.id}
-                      className="sidebar-item p-3 rounded-lg flex items-start justify-between group"
+                      className="p-3 rounded-lg flex items-start justify-between group bg-neutral-800 hover:bg-neutral-750"
                     >
                       <div className="flex items-start space-x-2 min-w-0 flex-1">
-                        <FileText className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
+                        <FileText className="w-4 h-4 mt-0.5 text-blue-400 flex-shrink-0" />
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium truncate" title={doc.name}>
+                          <p className="text-xs font-medium truncate text-white" title={doc.name}>
                             {doc.name}
                           </p>
-                          <p className="text-xs text-muted-foreground">{doc.size}</p>
+                          <p className="text-xs text-neutral-400">{doc.size}</p>
                           <div className="flex items-center space-x-1 mt-1">
                             {getStatusIcon(doc.status)}
-                            <span className="text-xs text-muted-foreground capitalize">
+                            <span className="text-xs text-neutral-400 capitalize">
                               {doc.status}
                             </span>
                           </div>
@@ -193,7 +452,7 @@ export function AppSidebar() {
                         size="sm"
                         variant="ghost"
                         onClick={() => deleteDocument(doc.id)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-auto"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-auto text-neutral-400 hover:text-red-400"
                       >
                         <Trash2 className="w-3 h-3" />
                       </Button>
@@ -205,21 +464,21 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
 
-        {/* Collection Status */}
+        {/* Vector Database */}
         {!collapsed && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-sm font-medium">
+            <SidebarGroupLabel className="text-sm font-medium text-neutral-300">
               Vector Database
             </SidebarGroupLabel>
             <SidebarGroupContent>
-              <div className="sidebar-item p-3 rounded-lg">
+              <div className="p-3 rounded-lg bg-neutral-800">
                 <div className="flex items-center space-x-2 mb-2">
-                  <Database className="w-4 h-4 text-success" />
-                  <span className="text-xs font-medium">Connected to Qdrant</span>
+                  <Database className="w-4 h-4 text-green-400" />
+                  <span className="text-xs font-medium text-white">Connected to Qdrant</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-success rounded-full"></div>
-                  <span className="text-xs text-muted-foreground">
+                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <span className="text-xs text-neutral-400">
                     Collection: pdf_embeddingsV3
                   </span>
                 </div>
@@ -233,15 +492,16 @@ export function AppSidebar() {
           <SidebarGroup>
             <SidebarGroupContent>
               <Select>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full bg-neutral-800 border-neutral-600 text-white">
                   <SelectValue placeholder="Delete documents..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-neutral-800 border-neutral-600">
                   {documents.map((doc) => (
                     <SelectItem 
                       key={doc.id} 
                       value={doc.id}
                       onSelect={() => deleteDocument(doc.id)}
+                      className="text-white hover:bg-neutral-700"
                     >
                       {doc.name}
                     </SelectItem>
@@ -251,6 +511,30 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
         )}
+
+        {/* Account Info - Always at bottom */}
+        <div className="mt-auto">
+          {!collapsed && (
+            <div className="border-t border-neutral-700 pt-4">
+              <div className="flex items-center space-x-3 p-3 rounded-lg bg-neutral-800 hover:bg-neutral-750 transition-colors">
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                  <User className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-white truncate">Sarab</p>
+                  <p className="text-xs text-neutral-400">Free Plan</p>
+                </div>
+              </div>
+            </div>
+          )}
+          {collapsed && (
+            <div className="border-t border-neutral-700 pt-4">
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center mx-auto">
+                <User className="w-4 h-4 text-white" />
+              </div>
+            </div>
+          )}
+        </div>
       </SidebarContent>
     </Sidebar>
   );
