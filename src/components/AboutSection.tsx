@@ -10,17 +10,13 @@ const AboutSection = () => {
           <div className="card-gradient rounded-2xl p-8 md:p-12 hover-lift">
             <div className="prose prose-lg prose-invert mx-auto">
               <p className="text-foreground/80 text-lg leading-relaxed mb-6">
-                We are pioneering the future of artificial intelligence communication. 
-                Our platform combines cutting-edge AI models with intuitive design 
-                to create seamless conversational experiences.
-              </p>
-              
-              <p className="text-foreground/70 leading-relaxed">
-                Built by a team of AI researchers, engineers, and designers, 
-                we believe that the best AI interactions feel natural, helpful, 
-                and genuinely intelligent. Our mission is to democratize access 
-                to advanced AI capabilities while maintaining the highest standards 
-                of privacy and security.
+                At SYD.AI, we believe working with documents shouldn’t feel overwhelming. Whether it’s a hundred-page research paper, a stack of contracts, or meeting notes that never end, our goal is simple: help you find the gist in seconds.
+                
+                SYD stands for “Summarise Your Documents” — an AI assistant designed to understand your files, answer your questions, and deliver context-aware summaries you can trust.
+
+                We combine retrieval-augmented generation (RAG) with vector databases to make sure every answer is grounded in your documents, not guesswork. Think of SYD as your personal reading partner — fast, precise, and always available.
+
+                Our mission is to make information accessible, accurate, and effortless, so you can focus on thinking, not skimming.
               </p>
             </div>
             
