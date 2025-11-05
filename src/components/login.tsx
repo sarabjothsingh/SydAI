@@ -25,21 +25,13 @@ const LoginPage = () => {
   }, [location]);
 
   const handleGoogleSignup = () => {
-    setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      console.log("Google signup/login");
-    }, 2000);
+    // Redirect to backend OAuth endpoint
+    window.location.href = `${import.meta.env.VITE_API_BASE_URL || "http://localhost:3000"}/auth/google`;
   };
 
   const handleGithubSignup = () => {
-    setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      console.log("GitHub signup/login");
-    }, 2000);
+    // Redirect to backend OAuth endpoint
+    window.location.href = `${import.meta.env.VITE_API_BASE_URL || "http://localhost:3000"}/auth/github`;
   };
 
   const handleEmailSubmit = (e: React.FormEvent) => {

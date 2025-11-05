@@ -188,6 +188,7 @@ import { Send, Bot, User, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useSidebar } from "@/components/ui/sidebar";
+import { useAuth } from "@/context/AuthContext";
 import {
   Select,
   SelectContent,
@@ -210,6 +211,13 @@ const ChatInterface = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toggleSidebar, state } = useSidebar();
   const sidebarOpen = state === "expanded";
+  const { user } = useAuth();
+  const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:3000";
+
+  const handleLogout = () => {
+    // Let the server clear the session then redirect back to /login
+    window.location.href = `${API_BASE}/logout`;
+  };
 
   const models = [
     { value: "gpt-4", label: "GPT-4" },
@@ -266,18 +274,28 @@ const ChatInterface = () => {
           >
             <Menu className="w-5 h-5" />
           </Button>
-          <Select value={selectedModel} onValueChange={setSelectedModel}>
-            <SelectTrigger className="w-48 bg-neutral-800 border-neutral-600 text-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-neutral-800 border-neutral-600">
-              {models.map((model) => (
-                <SelectItem key={model.value} value={model.value} className="text-white hover:bg-neutral-700">
-                  {model.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Select value={selectedModel} onValueChange={setSelectedModel}>
+              <SelectTrigger className="w-48 bg-neutral-800 border-neutral-600 text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-neutral-800 border-neutral-600">
+                {models.map((model) => (
+                  <SelectItem key={model.value} value={model.value} className="text-white hover:bg-neutral-700">
+                    {model.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="border-neutral-600 text-neutral-200 hover:bg-neutral-800"
+            >
+              Logout
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -289,7 +307,7 @@ const ChatInterface = () => {
               <div className="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Bot className="w-8 h-8 text-blue-400" />
               </div>
-              <h3 className="text-2xl font-semibold mb-2 text-white">Good afternoon, Sarab! 👋</h3>
+              <h3 className="text-2xl font-semibold mb-2 text-white">{`Hello ${user?.firstName || "User"}!`}</h3>
               <p className="text-neutral-400 max-w-md mx-auto">
                 What's on your mind today?
               </p>

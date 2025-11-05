@@ -1,0 +1,263 @@
+// Load env from server/.env explicitly to avoid cwd ambiguity
+require("dotenv").config({ path: require("path").join(__dirname, ".env") });
+const express = require("express");
+const passport = require("passport");
+const session = require("express-session");
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
+const GitHubStrategy = require("passport-github2").Strategy;
+const cors = require("cors");
+const axios = require("axios");
+
+const app = express();
+app.use(express.json());
+
+// CORS for Vite dev server
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:8081";
+app.use(
+  cors({
+    origin: CLIENT_ORIGIN,
+    credentials: true,
+  })
+);
+
+// Token expiry window (default 1 hour). Override with ACCESS_TOKEN_TTL_MS in .env
+const EXPIRES_IN_MS = Number(process.env.ACCESS_TOKEN_TTL_MS || 1000 * 60 * 60);
+
+// Database service URL (standalone service)
+const DATABASE_SERVICE_URL = process.env.DATABASE_SERVICE_URL || "http://localhost:4000";
+
+// Session middleware
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "secret",
+    resave: false,
+    saveUninitialized: true,
+  })
+);
+app.use(passport.initialize());
+app.use(passport.session());
+
+// No direct DB connection here; uses standalone database service
+
+/* ================= GOOGLE STRATEGY ================= */
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: "http://localhost:3000/auth/google/callback",
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        const given = profile.name?.givenName || "";
+        const family = profile.name?.familyName || "";
+        const full = profile.displayName || `${given} ${family}`.trim();
+  const now = new Date();
+  const expiresAt = new Date(Date.now() + EXPIRES_IN_MS);
+
+        const setFields = {
+          provider: "google",
+          displayName: profile.displayName,
+          firstName: given,
+          lastName: family,
+          fullName: full,
+          emails: profile.emails,
+          photos: profile.photos,
+          status: "logged_in",
+          updatedAt: now,
+          "currentSession.accessToken": accessToken,
+          "currentSession.refreshToken": refreshToken,
+          "currentSession.loggedInAt": now,
+          "currentSession.lastActive": now,
+          "currentSession.expiresAt": expiresAt,
+        };
+        const loginHistoryEntry = { loginTime: now, provider: "google", status: "logged_in" };
+        const createDoc = {
+          provider: "google",
+          displayName: profile.displayName,
+          firstName: given,
+          lastName: family,
+          fullName: full,
+          emails: profile.emails,
+          photos: profile.photos,
+          status: "logged_in",
+          currentSession: { accessToken, refreshToken, loggedInAt: now, lastActive: now, expiresAt },
+        };
+        const { data: user } = await axios.post(`${DATABASE_SERVICE_URL}/users/google/upsert`, {
+          googleId: profile.id,
+          setFields,
+          loginHistoryEntry,
+          createDoc,
+        });
+        return done(null, user);
+      } catch (err) {
+        return done(err);
+      }
+    }
+  )
+);
+
+/* ================= GITHUB STRATEGY ================= */
+passport.use(
+  new GitHubStrategy(
+    {
+      clientID: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+      callbackURL: "http://localhost:3000/auth/github/callback",
+      scope: ["user:email"],
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        const full = profile.displayName || profile.username;
+  const now = new Date();
+  const expiresAt = new Date(Date.now() + EXPIRES_IN_MS);
+
+        const setFields = {
+          provider: "github",
+          displayName: profile.displayName || profile.username,
+          username: profile.username,
+          fullName: full,
+          emails: profile.emails,
+          photos: profile.photos,
+          status: "logged_in",
+          updatedAt: now,
+          "currentSession.accessToken": accessToken,
+          "currentSession.refreshToken": refreshToken,
+          "currentSession.loggedInAt": now,
+          "currentSession.lastActive": now,
+          "currentSession.expiresAt": expiresAt,
+        };
+        const loginHistoryEntry = { loginTime: now, provider: "github", status: "logged_in" };
+        const createDoc = {
+          provider: "github",
+          displayName: profile.displayName || profile.username,
+          username: profile.username,
+          fullName: full,
+          emails: profile.emails,
+          photos: profile.photos,
+          status: "logged_in",
+          currentSession: { accessToken, refreshToken, loggedInAt: now, lastActive: now, expiresAt },
+        };
+        const { data: user } = await axios.post(`${DATABASE_SERVICE_URL}/users/github/upsert`, {
+          githubId: profile.id,
+          setFields,
+          loginHistoryEntry,
+          createDoc,
+        });
+        return done(null, user);
+      } catch (err) {
+        return done(err);
+      }
+    }
+  )
+);
+
+passport.serializeUser((user, done) => done(null, user._id));
+passport.deserializeUser(async (id, done) => {
+  try {
+    const { data: user } = await axios.get(`${DATABASE_SERVICE_URL}/users/${id}`);
+    done(null, user);
+  } catch (err) {
+    // 404 or error -> treat as no user
+    done(null, null);
+  }
+});
+
+/* ================= ROUTES ================= */
+app.get("/", (req, res) => {
+  res.send("SydAI Auth Server Running");
+});
+
+/* --- GOOGLE ROUTES --- */
+app.get(
+  "/auth/google",
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+    prompt: "consent",
+    accessType: "offline",
+    includeGrantedScopes: true,
+  })
+);
+app.get(
+  "/auth/google/callback",
+  passport.authenticate("google", { failureRedirect: "/" }),
+  (req, res) => res.redirect(`${CLIENT_ORIGIN}/app`)
+);
+
+/* --- GITHUB ROUTES --- */
+app.get("/auth/github", passport.authenticate("github", { scope: ["user:email"] }));
+app.get(
+  "/auth/github/callback",
+  passport.authenticate("github", { failureRedirect: "/" }),
+  (req, res) => res.redirect(`${CLIENT_ORIGIN}/app`)
+);
+
+// Session validation middleware (expiry-aware)
+async function checkSession(req, res, next) {
+  try {
+    if (!req.user) return res.status(401).json({ authenticated: false, message: "Not logged in" });
+    const sess = req.user.currentSession;
+    const now = new Date();
+
+    if (!sess || !sess.expiresAt || new Date(sess.expiresAt) <= now) {
+      try {
+        await axios.post(`${DATABASE_SERVICE_URL}/sessions/clear-expired`, {
+          userId: req.user._id,
+          loginTime: sess ? sess.loggedInAt : null,
+          provider: req.user.provider || null,
+        });
+      } catch (e) {
+        console.error("Error clearing expired session:", e);
+      }
+
+      return req.logout(() => {
+        req.session.destroy(() => res.status(401).json({ authenticated: false, message: "Session expired" }));
+      });
+    }
+
+    // update lastActive (non-blocking)
+    axios
+      .post(`${DATABASE_SERVICE_URL}/sessions/touch`, { userId: req.user._id })
+      .catch((e) => console.error("Error updating lastActive:", e));
+
+    return next();
+  } catch (err) {
+    console.error("checkSession error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
+// Status check endpoint (expiry-aware)
+app.get("/status", checkSession, (req, res) => {
+  res.json({
+    authenticated: true,
+    provider: req.user.provider,
+    firstName: req.user.firstName || req.user.fullName || req.user.displayName,
+    expiresAt: req.user.currentSession?.expiresAt || null,
+  });
+});
+
+// Logout
+app.get("/logout", async (req, res) => {
+  if (req.user) {
+    try {
+      await axios.post(`${DATABASE_SERVICE_URL}/logout`, {
+        userId: req.user._id,
+        loginTime: req.user.currentSession ? req.user.currentSession.loggedInAt : null,
+        provider: req.user.provider,
+      });
+    } catch (err) {
+      console.error("Error updating logout:", err);
+    }
+  }
+  req.logout(() => {
+    req.session.destroy(() => {
+      res.redirect(`${CLIENT_ORIGIN}/login`);
+    });
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server is running at http://localhost:${PORT}`);
+});

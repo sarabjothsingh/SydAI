@@ -16,11 +16,7 @@ const Navbar = () => {
   };
 
   const handleLogin = () => {
-    navigate("/app");
-  };
-
-  const handleSignUp = () => {
-    navigate("/login?mode=signup");
+    navigate("/login");
   };
 
   return (
@@ -51,13 +47,7 @@ const Navbar = () => {
             variant="outline"
             className="border-primary/30 hover:border-primary hover:bg-primary/10"
           >
-            Login
-          </Button>
-          <Button
-            onClick={handleSignUp}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground"
-          >
-            Sign Up
+            Sign In
           </Button>
         </div>
 
@@ -99,13 +89,7 @@ const Navbar = () => {
               variant="outline"
               className="flex-1 border-primary/30 hover:border-primary hover:bg-primary/10"
             >
-              Login
-            </Button>
-            <Button
-              onClick={handleSignUp}
-              className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-              Sign Up
+              Sign In
             </Button>
           </div>
         </div>

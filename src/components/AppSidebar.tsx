@@ -279,6 +279,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAuth } from "@/context/AuthContext";
 
 interface Document {
   id: string;
@@ -292,6 +293,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { toast } = useToast();
+  const { user } = useAuth();
   const [documents, setDocuments] = useState<Document[]>([
     {
       id: "1",
@@ -500,7 +502,7 @@ export function AppSidebar() {
                   <User className="w-4 h-4 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">Sarab</p>
+                  <p className="text-sm font-medium text-white truncate">{user?.firstName || "User"}</p>
                   <p className="text-xs text-neutral-400">Free Plan</p>
                 </div>
               </div>
