@@ -7,9 +7,11 @@ const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const GitHubStrategy = require("passport-github2").Strategy;
 const cors = require("cors");
 const axios = require("axios");
+const cookieParser = require("cookie-parser");
 
 const app = express();
 app.use(express.json());
+app.use(cookieParser());
 
 // CORS for Vite dev server
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:8081";
@@ -32,6 +34,12 @@ app.use(
     secret: process.env.SESSION_SECRET || "secret",
     resave: false,
     saveUninitialized: true,
+    cookie: {
+      httpOnly: true,
+      secure: false, // set true in production when using HTTPS
+      sameSite: "lax",
+      maxAge: 1000 * 60 * 60 * 24, // 1 day
+    },
   })
 );
 app.use(passport.initialize());
@@ -181,7 +189,13 @@ app.get(
 app.get(
   "/auth/google/callback",
   passport.authenticate("google", { failureRedirect: "/" }),
-  (req, res) => res.redirect(`${CLIENT_ORIGIN}/app`)
+  (req, res) => {
+    try {
+      const token = req.user?.currentSession?.accessToken;
+      setAuthCookie(res, token);
+    } catch (_) {}
+    return res.redirect(`${CLIENT_ORIGIN}/app`);
+  }
 );
 
 /* --- GITHUB ROUTES --- */
@@ -189,7 +203,13 @@ app.get("/auth/github", passport.authenticate("github", { scope: ["user:email"] 
 app.get(
   "/auth/github/callback",
   passport.authenticate("github", { failureRedirect: "/" }),
-  (req, res) => res.redirect(`${CLIENT_ORIGIN}/app`)
+  (req, res) => {
+    try {
+      const token = req.user?.currentSession?.accessToken;
+      setAuthCookie(res, token);
+    } catch (_) {}
+    return res.redirect(`${CLIENT_ORIGIN}/app`);
+  }
 );
 
 // Session validation middleware (expiry-aware)
@@ -211,6 +231,7 @@ async function checkSession(req, res, next) {
       }
 
       return req.logout(() => {
+        res.clearCookie("accessToken");
         req.session.destroy(() => res.status(401).json({ authenticated: false, message: "Session expired" }));
       });
     }
@@ -251,6 +272,7 @@ app.get("/logout", async (req, res) => {
     }
   }
   req.logout(() => {
+    res.clearCookie("accessToken");
     req.session.destroy(() => {
       res.redirect(`${CLIENT_ORIGIN}/login`);
     });
@@ -261,3 +283,15 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server is running at http://localhost:${PORT}`);
 });
+
+// Helper to set HttpOnly access token cookie
+function setAuthCookie(res, token) {
+  if (!token) return;
+  res.cookie("accessToken", token, {
+    httpOnly: true,
+    secure: false, // set true in production with HTTPS
+    sameSite: "lax",
+    maxAge: 1000 * 60 * 60 * 24, // 1 day
+  });
+}
+
