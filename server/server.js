@@ -260,21 +260,45 @@ app.get("/status", checkSession, (req, res) => {
 
 // Logout
 app.get("/logout", async (req, res) => {
-  if (req.user) {
-    try {
-      await axios.post(`${DATABASE_SERVICE_URL}/logout`, {
-        userId: req.user._id,
-        loginTime: req.user.currentSession ? req.user.currentSession.loggedInAt : null,
-        provider: req.user.provider,
-      });
-    } catch (err) {
-      console.error("Error updating logout:", err);
-    }
+  // Attempt primary logout by userId
+  const effectiveUserId = (req.user && req.user._id) || (req.session?.passport?.user) || null;
+  const accessTokenCookie = req.cookies?.accessToken;
+
+  async function performDbLogoutByUserId(userId) {
+    const loginTime = req.user?.currentSession?.loggedInAt || null;
+    const provider = req.user?.provider || null;
+    await axios.post(`${DATABASE_SERVICE_URL}/logout`, { userId, loginTime, provider });
   }
+
+  async function performDbLogoutByToken(token) {
+    await axios.post(`${DATABASE_SERVICE_URL}/sessions/logout-by-token`, { accessToken: token });
+  }
+
+  try {
+    if (effectiveUserId) {
+      try {
+        await performDbLogoutByUserId(effectiveUserId);
+      } catch (e1) {
+        // Fallback to token-based logout if available
+        if (accessTokenCookie) {
+          try { await performDbLogoutByToken(accessTokenCookie); } catch (e2) { console.error("Logout fallback (token) failed", e2); }
+        } else {
+          console.error("Logout by userId failed and no token cookie fallback", e1);
+        }
+      }
+    } else if (accessTokenCookie) {
+      // No userId but have token cookie
+      try { await performDbLogoutByToken(accessTokenCookie); } catch (e3) { console.error("Logout by token failed", e3); }
+    }
+  } catch (outerErr) {
+    console.error("Unexpected logout error", outerErr);
+  }
+
   req.logout(() => {
     res.clearCookie("accessToken");
     req.session.destroy(() => {
-      res.redirect(`${CLIENT_ORIGIN}/login`);
+      // Redirect to landing page instead of /login
+      res.redirect(`${CLIENT_ORIGIN}/`);
     });
   });
 });

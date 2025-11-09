@@ -141,10 +141,11 @@ app.post("/logout", async (req, res) => {
     const { userId, loginTime = null, provider = null } = req.body;
     if (!userId) return res.status(400).json({ message: "userId required" });
     const now = new Date();
+    // Clear session atomically without conflicting nested updates
     const updated = await User.findByIdAndUpdate(
       userId,
       {
-        $set: { status: "logged_out", "currentSession.lastActive": now, updatedAt: now },
+        $set: { status: "logged_out", updatedAt: now },
         $push: {
           loginHistory: { logoutTime: now, loginTime: loginTime || null, provider: provider || null, status: "logged_out" },
         },
@@ -155,6 +156,33 @@ app.post("/logout", async (req, res) => {
     res.json({ ok: true, user: updated });
   } catch (err) {
     console.error("[DB] logout error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Logout by accessToken cookie value (fallback when userId not available)
+app.post("/sessions/logout-by-token", async (req, res) => {
+  try {
+    const { accessToken } = req.body;
+    if (!accessToken) return res.status(400).json({ message: "accessToken required" });
+    const user = await User.findOne({ "currentSession.accessToken": accessToken });
+    if (!user) return res.status(404).json({ message: "User not found for token" });
+
+    const now = new Date();
+    const updated = await User.findByIdAndUpdate(
+      user._id,
+      {
+        $set: { status: "logged_out", updatedAt: now },
+        $push: {
+          loginHistory: { logoutTime: now, loginTime: user.currentSession?.loggedInAt || null, provider: user.provider || null, status: "logged_out" },
+        },
+        $unset: { currentSession: "" },
+      },
+      { new: true }
+    );
+    res.json({ ok: true, user: updated });
+  } catch (err) {
+    console.error("[DB] logout-by-token error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
