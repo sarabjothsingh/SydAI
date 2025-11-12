@@ -47,7 +47,7 @@ const Navbar = () => {
             variant="outline"
             className="border-primary/30 hover:border-primary hover:bg-primary/10"
           >
-            Sign In
+            Log in
           </Button>
         </div>
 
