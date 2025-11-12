@@ -781,7 +781,7 @@
 //   );
 // }
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Upload, FileText, Trash2, CheckCircle, AlertCircle, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -798,12 +798,18 @@ import {
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/context/AuthContext";
 import { useChatContext } from "@/context/ChatContext";
-import { ingestDocuments } from "@/lib/aiClient";
+import {
+  ingestDocuments,
+  fetchDocuments,
+  deleteDocument as deleteDocumentApi,
+  StoredDocument,
+} from "@/lib/aiClient";
 
 type DocumentStatus = "uploading" | "indexed" | "error";
 
-interface Document {
+interface DocumentItem {
   id: string;
+  persistedId?: string;
   name: string;
   sizeLabel: string;
   status: DocumentStatus;
@@ -822,7 +828,44 @@ export function AppSidebar() {
   const { user } = useAuth();
   const { setSidebarRequest } = useChatContext();
 
-  const [documents, setDocuments] = useState<Document[]>([]);
+  const [documents, setDocuments] = useState<DocumentItem[]>([]);
+  const [isLoadingDocuments, setIsLoadingDocuments] = useState(false);
+
+  const mergeServerDocuments = useCallback((serverDocs: StoredDocument[]) => {
+    setDocuments((prev) => {
+      const uploading = prev.filter((doc) => doc.status === "uploading");
+      const indexed = serverDocs.map((doc) => ({
+        id: doc._id,
+        persistedId: doc._id,
+        name: doc.name,
+        sizeLabel: formatFileSize(doc.sizeBytes ?? 0),
+        status: "indexed" as DocumentStatus,
+        errorMessage: undefined,
+      }));
+      return [...indexed, ...uploading];
+    });
+  }, []);
+
+  const loadDocuments = useCallback(async () => {
+    setIsLoadingDocuments(true);
+    try {
+      const docs = await fetchDocuments();
+      mergeServerDocuments(docs);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast({
+        title: "Failed to load documents",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingDocuments(false);
+    }
+  }, [mergeServerDocuments, toast]);
+
+  useEffect(() => {
+    void loadDocuments();
+  }, [loadDocuments]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -868,9 +911,9 @@ export function AppSidebar() {
         return;
       }
 
-      const docId = makeId();
-      const newDoc: Document = {
-        id: docId,
+      const tempId = makeId();
+      const newDoc: DocumentItem = {
+        id: tempId,
         name: file.name,
         sizeLabel: formatFileSize(file.size),
         status: "uploading",
@@ -885,11 +928,8 @@ export function AppSidebar() {
 
       try {
         await ingestDocuments([file]);
-        setDocuments((prev) =>
-          prev.map((doc) =>
-            doc.id === docId ? { ...doc, status: "indexed", errorMessage: undefined } : doc
-          )
-        );
+        setDocuments((prev) => prev.filter((doc) => doc.id !== tempId));
+        await loadDocuments();
         toast({
           title: "Document ready",
           description: `${file.name} has been indexed and is ready for queries.`,
@@ -903,7 +943,7 @@ export function AppSidebar() {
             : "Failed to ingest document.";
         setDocuments((prev) =>
           prev.map((doc) =>
-            doc.id === docId ? { ...doc, status: "error", errorMessage: message } : doc
+            doc.id === tempId ? { ...doc, status: "error", errorMessage: message } : doc
           )
         );
         toast({
@@ -917,15 +957,32 @@ export function AppSidebar() {
     event.target.value = "";
   };
 
-  const deleteDocument = (docId: string) => {
-    setDocuments((prev) => prev.filter((doc) => doc.id !== docId));
-    toast({
-      title: "Document deleted",
-      description: "The document has been removed from your collection.",
-    });
+  const handleDeleteDocument = async (doc: DocumentItem) => {
+    if (doc.status === "uploading" && !doc.persistedId) {
+      setDocuments((prev) => prev.filter((item) => item.id !== doc.id));
+      return;
+    }
+
+    if (!doc.persistedId) return;
+
+    try {
+      await deleteDocumentApi(doc.persistedId);
+      toast({
+        title: "Document deleted",
+        description: `${doc.name} has been removed from your workspace.`,
+      });
+      await loadDocuments();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast({
+        title: "Failed to delete document",
+        description: message,
+        variant: "destructive",
+      });
+    }
   };
 
-  const getStatusDisplay = (doc: Document) => {
+  const getStatusDisplay = (doc: DocumentItem) => {
     if (doc.status === "uploading") {
       return (
         <div className="w-full mt-1">
@@ -1014,7 +1071,7 @@ export function AppSidebar() {
               </SidebarGroupLabel>
               <SidebarGroupContent className="flex-1 min-h-0">
                 <div className="space-y-2 overflow-y-auto pr-1 h-full">
-                  {documents.length === 0 ? (
+                  {documents.length === 0 && !isLoadingDocuments ? (
                     <p className="text-xs text-neutral-400 text-center py-4">
                       No documents uploaded yet
                     </p>
@@ -1042,7 +1099,7 @@ export function AppSidebar() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => deleteDocument(doc.id)}
+                          onClick={() => handleDeleteDocument(doc)}
                           className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-auto text-neutral-400 hover:text-red-400"
                         >
                           <Trash2 className="w-3 h-3" />
@@ -1050,6 +1107,9 @@ export function AppSidebar() {
                       </div>
                     ))
                   )}
+                  {isLoadingDocuments ? (
+                    <p className="text-xs text-neutral-500 text-center py-2">Loading documents…</p>
+                  ) : null}
                 </div>
               </SidebarGroupContent>
             </SidebarGroup>

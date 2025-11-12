@@ -53,7 +53,22 @@ function loadModelRegistry() {
       }
     });
   });
-  return parsed;
+  return parsed.map((model) => {
+    const summaryTokenLimit =
+      typeof model.summary_token_limit === "number" && !Number.isNaN(model.summary_token_limit)
+        ? model.summary_token_limit
+        : 8000;
+    const summaryOverlapTokens =
+      typeof model.summary_overlap_tokens === "number" && !Number.isNaN(model.summary_overlap_tokens)
+        ? model.summary_overlap_tokens
+        : 400;
+
+    return {
+      ...model,
+      summary_token_limit: summaryTokenLimit,
+      summary_overlap_tokens: summaryOverlapTokens,
+    };
+  });
 }
 
 function buildConfig() {
@@ -63,13 +78,7 @@ function buildConfig() {
   const googleApiKey = getEnvVar("GOOGLE_API_KEY");
   const ollamaBaseUrl = getEnvVar("OLLAMA_BASE_URL", { fallback: "http://localhost:11434" });
   const embeddingServiceUrl = getEnvVar("EMBEDDING_SERVICE_URL", { fallback: "http://localhost:8001" });
-
-  const qdrantUrl = getEnvVar("QDRANT_URL");
-  const qdrantApiKey = getEnvVar("QDRANT_API_KEY");
-  const qdrantHost = getEnvVar("QDRANT_HOST", { fallback: "localhost" });
-  const qdrantPort = Number(getEnvVar("QDRANT_PORT", { fallback: 6333 }));
-  const qdrantCollection = getEnvVar("QDRANT_COLLECTION", { fallback: "embeddings_bgem3" });
-  const embeddingDim = Number(getEnvVar("EMBEDDING_DIM", { fallback: 1024 }));
+  const databaseServiceUrl = getEnvVar("DATABASE_SERVICE_URL", { fallback: "http://localhost:4000" });
 
   const modelRegistry = loadModelRegistry();
 
@@ -80,14 +89,7 @@ function buildConfig() {
       googleApiKey,
       ollamaBaseUrl,
       embeddingServiceUrl,
-      qdrant: {
-        url: qdrantUrl,
-        apiKey: qdrantApiKey,
-        host: qdrantHost,
-        port: qdrantPort,
-        collectionName: qdrantCollection,
-        vectorSize: embeddingDim,
-      },
+      databaseServiceUrl,
     },
   };
 

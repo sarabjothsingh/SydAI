@@ -68,11 +68,11 @@ const MainApp = () => {
   if (!user) return null;
 
   return (
-    <ChatProvider> {/* ✅ Wrap entire app in ChatProvider */}
+    <ChatProvider>
       <SidebarProvider>
-        <div className="min-h-screen flex w-full">
+        <div className="flex h-dvh w-full overflow-hidden">
           <AppSidebar />
-          <main className="flex-1 flex flex-col">
+          <main className="flex flex-1 flex-col overflow-hidden">
             <ChatInterface />
           </main>
         </div>

@@ -742,9 +742,9 @@ const ChatInterface = () => {
   );
 
   return (
-    <div className="flex flex-col h-full bg-neutral-900">
+    <div className="grid h-full w-full grid-rows-[auto,1fr,auto] bg-neutral-900">
       {/* Chat Header */}
-      <div className="border-b border-neutral-700 p-4">
+      <div className="border-b border-neutral-800/70 bg-neutral-900/95 backdrop-blur px-4 py-4">
         <div className="flex items-center justify-between">
           <Button
             variant="ghost"
@@ -792,12 +792,12 @@ const ChatInterface = () => {
 
       {/* Messages Area */}
       <div
-        className={`flex-1 overflow-y-auto transition-all duration-300 ${
-          sidebarOpen ? "ml-8" : ""
+        className={`overflow-y-auto transition-all duration-300 ${
+          sidebarOpen ? "lg:pl-8" : ""
         }`}
       >
         {messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
+          <div className="flex h-full items-center justify-center px-4">
             <div className="text-center">
               <div className="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Bot className="w-8 h-8 text-blue-400" />
@@ -811,7 +811,7 @@ const ChatInterface = () => {
             </div>
           </div>
         ) : (
-          <div className="space-y-6 p-4">
+          <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-6">
             {messages.map((message) => (
               <div key={message.id} className="animate-fade-in">
                 {message.sender === "user" ? (
@@ -823,7 +823,7 @@ const ChatInterface = () => {
                 ) : (
                   <div
                     className={`flex items-start space-x-3 transition-all duration-300 ${
-                      sidebarOpen ? "pl-6" : "pl-0"
+                      sidebarOpen ? "lg:pl-6" : "pl-0"
                     }`}
                   >
                     <div className="w-8 h-8 bg-green-600/20 rounded-full flex items-center justify-center flex-shrink-0">
@@ -866,7 +866,7 @@ const ChatInterface = () => {
             {isLoading && (
               <div
                 className={`flex items-start space-x-3 animate-fade-in transition-all duration-300 ${
-                  sidebarOpen ? "pl-6" : "pl-0"
+                  sidebarOpen ? "lg:pl-6" : "pl-0"
                 }`}
               >
                 <div className="w-8 h-8 bg-green-600/20 rounded-full flex items-center justify-center">
@@ -893,18 +893,18 @@ const ChatInterface = () => {
 
       {/* Input Area */}
       <div
-        className={`p-6 transition-all duration-300 ${
-          sidebarOpen ? "ml-8" : ""
+        className={`border-t border-neutral-800/60 bg-neutral-900/95 px-4 py-5 transition-all duration-300 ${
+          sidebarOpen ? "lg:pl-8" : ""
         }`}
       >
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-end space-x-3 bg-neutral-800 rounded-xl p-2">
+        <div className="mx-auto w-full max-w-4xl">
+          <div className="flex items-end gap-3 rounded-xl bg-neutral-800/90 p-3 shadow-sm shadow-black/20">
             <Textarea
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Message your AI assistant..."
-              className="flex-1 bg-transparent border-none resize-none min-h-[24px] max-h-32 text-white placeholder-neutral-400 focus:ring-0 focus:outline-none p-2"
+              className="flex-1 resize-none border-none bg-transparent p-2 text-white placeholder-neutral-400 focus:outline-none focus:ring-0 max-h-48"
               disabled={isLoading || modelsLoading || !selectedModel}
             />
             <Button

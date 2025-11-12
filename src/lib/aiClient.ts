@@ -4,6 +4,19 @@ export type ModelConfig = {
   display_name: string;
   type: string;
   id: string;
+  summary_token_limit?: number;
+  summary_overlap_tokens?: number;
+};
+
+export type StoredDocument = {
+  _id: string;
+  name: string;
+  sizeBytes: number;
+  chunkCount: number;
+  status: string;
+  lastProcessedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 async function handleJsonResponse<T>(response: Response): Promise<T> {
@@ -22,7 +35,7 @@ export async function fetchModels(): Promise<ModelConfig[]> {
   return payload.models;
 }
 
-export async function ingestDocuments(files: File[]): Promise<{ ok: boolean; ingested: number }>
+export async function ingestDocuments(files: File[]): Promise<{ ok: boolean; ingested: number; documents?: StoredDocument[] }>
 {
   const formData = new FormData();
   files.forEach((file) => formData.append("files", file, file.name));
@@ -48,6 +61,22 @@ export async function queryAI(question: string, modelId: string): Promise<{ answ
   });
 
   return handleJsonResponse(response);
+}
+
+export async function fetchDocuments(): Promise<StoredDocument[]> {
+  const response = await fetch(`${API_BASE}/ai/documents`, {
+    credentials: "include",
+  });
+  const payload = await handleJsonResponse<{ documents: StoredDocument[] }>(response);
+  return payload.documents ?? [];
+}
+
+export async function deleteDocument(documentId: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/ai/documents/${documentId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  await handleJsonResponse(response);
 }
 
 export async function summarizeDocuments(modelId: string, filenames: string[]): Promise<{ summary: string }>

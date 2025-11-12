@@ -1,7 +1,6 @@
-const { getConfig } = require("../config");
-const { getQdrantClient, ensureCollectionExists } = require("../clients/qdrantClient");
 const { embedTexts } = require("../embeddings/embeddingClient");
 const { generate } = require("../clients/llmFactory");
+const { searchVectors } = require("../clients/databaseClient");
 
 const QA_PROMPT = ({ context, question }) => `System role: You are a precise technical analyst. Prefer accuracy over speculation. When unsure, state uncertainty.
 
@@ -22,25 +21,23 @@ ${question}
 
 Your answer:`;
 
-async function runRagQuery({ question, model, topK = 10 }) {
+async function runRagQuery({ question, model, userId, topK = 10 }) {
   if (!question || !model) {
     throw new Error("runRagQuery requires both question and model");
   }
-
-  const config = getConfig();
-  const collectionName = config.env.qdrant.collectionName;
-  const client = getQdrantClient();
-
-  // Guarantee the target collection exists before attempting a search.
-  await ensureCollectionExists(collectionName, config.env.qdrant.vectorSize);
+  if (!userId) {
+    throw new Error("runRagQuery requires userId");
+  }
 
   const [questionVector] = await embedTexts([question]);
 
-  const search = await client.search(collectionName, {
+  const searchResponse = await searchVectors({
+    userId,
     vector: questionVector,
     limit: topK,
-    with_payload: true,
   });
+
+  const search = searchResponse?.matches || [];
 
   const contexts = (search || [])
     .map((item) => {
@@ -60,7 +57,7 @@ async function runRagQuery({ question, model, topK = 10 }) {
 
   return {
     answer,
-    matches: search || [],
+    matches: search,
   };
 }
 

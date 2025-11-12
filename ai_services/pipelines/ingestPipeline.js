@@ -1,19 +1,19 @@
 const { readFile } = require("fs/promises");
 const parsePdf = require("pdf-parse");
 const { v4: uuid } = require("uuid");
-const { getConfig } = require("../config");
-const { getQdrantClient, ensureCollectionExists } = require("../clients/qdrantClient");
 const { embedTexts } = require("../embeddings/embeddingClient");
 const { chunkText } = require("../utils/chunks");
+const { ingestDocument } = require("../clients/databaseClient");
 
-async function ingestDocuments(documents = []) {
+async function ingestDocuments({ userId, documents = [] }) {
+  if (!userId) {
+    throw new Error("ingestDocuments requires userId");
+  }
   if (!Array.isArray(documents) || documents.length === 0) {
     throw new Error("ingestDocuments expects a non-empty array of document descriptors");
   }
 
-  const config = getConfig();
-  const client = getQdrantClient();
-  await ensureCollectionExists(config.env.qdrant.collectionName, config.env.qdrant.vectorSize);
+  const processedDocuments = [];
 
   for (const doc of documents) {
     const text = await extractText(doc);
@@ -27,20 +27,36 @@ async function ingestDocuments(documents = []) {
 
     const vectors = await embedTexts(chunks.map((chunk) => chunk.text));
 
-    const points = chunks.map((chunk, idx) => ({
+    const preparedChunks = chunks.map((chunk, idx) => ({
       id: uuid(),
       vector: vectors[idx],
-      payload: {
-        text: chunk.text,
-        metadata: chunk.metadata,
+      text: chunk.text,
+      metadata: {
+        ...chunk.metadata,
+        chunk_index: chunk.metadata?.chunk_index ?? idx,
       },
     }));
 
-    await client.upsert(config.env.qdrant.collectionName, {
-      wait: true,
-      points,
+    const response = await ingestDocument({
+      userId,
+      document: {
+        name: doc.filename,
+        sizeBytes: doc.buffer?.length || doc.size || 0,
+        chunkCount: preparedChunks.length,
+        metadata: {
+          source: doc.source || "upload",
+          mimetype: doc.mimetype,
+        },
+        chunks: preparedChunks,
+      },
     });
+
+    if (response?.document) {
+      processedDocuments.push(response.document);
+    }
   }
+
+  return processedDocuments;
 }
 
 async function extractText(doc) {
