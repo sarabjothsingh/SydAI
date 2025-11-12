@@ -798,114 +798,127 @@ import {
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/context/AuthContext";
 import { useChatContext } from "@/context/ChatContext";
+import { ingestDocuments } from "@/lib/aiClient";
+
+type DocumentStatus = "uploading" | "indexed" | "error";
 
 interface Document {
   id: string;
   name: string;
-  size: string;
-  uploadDate: string;
-  status: "uploading" | "uploaded" | "error";
-  progress?: number;
+  sizeLabel: string;
+  status: DocumentStatus;
+  errorMessage?: string;
 }
 
 const MAX_DOCUMENTS = 5;
+
+const makeId = () => globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2);
+const formatFileSize = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { toast } = useToast();
   const { user } = useAuth();
-  const { setSidebarMessage } = useChatContext();
+  const { setSidebarRequest } = useChatContext();
 
-  const [documents, setDocuments] = useState<Document[]>([
-    {
-      id: "1",
-      name: "research_paper.pdf",
-      size: "2.4 MB",
-      uploadDate: "2024-01-15",
-      status: "uploaded",
-      progress: 100,
-    },
-  ]);
+  const [documents, setDocuments] = useState<Document[]>([]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files?.length) return;
 
-    if (documents.length >= MAX_DOCUMENTS) {
+    const remainingSlots = MAX_DOCUMENTS - documents.length;
+    if (remainingSlots <= 0) {
       toast({
         title: "Upload limit reached",
         description:
           "You can upload a maximum of 5 documents. Please delete one to add a new file.",
         variant: "destructive",
       });
+      event.target.value = "";
       return;
     }
 
-    const file = files[0];
-
-    if (file.size > 200 * 1024 * 1024) {
+    const acceptedFiles = Array.from(files).slice(0, remainingSlots);
+    if (acceptedFiles.length < files.length) {
       toast({
-        title: "File too large",
-        description: "Please select a file smaller than 200MB.",
-        variant: "destructive",
+        title: "Some files were not uploaded",
+        description: "Upload limit reached; extra files were ignored.",
       });
-      return;
     }
 
-    if (!file.type.includes("pdf")) {
+    acceptedFiles.forEach(async (file) => {
+      if (file.size > 200 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select a file smaller than 200MB.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const isPdf = file.type.includes("pdf") || file.name.toLowerCase().endsWith(".pdf");
+      if (!isPdf) {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload a PDF file.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const docId = makeId();
+      const newDoc: Document = {
+        id: docId,
+        name: file.name,
+        sizeLabel: formatFileSize(file.size),
+        status: "uploading",
+      };
+
+      setDocuments((prev) => [...prev, newDoc]);
+
       toast({
-        title: "Invalid file type",
-        description: "Please upload a PDF file.",
-        variant: "destructive",
+        title: "Indexing document",
+        description: `${file.name} is being processed and embedded.`,
       });
-      return;
-    }
 
-    const newDoc: Document = {
-      id: Date.now().toString(),
-      name: file.name,
-      size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-      uploadDate: new Date().toISOString().split("T")[0],
-      status: "uploading",
-      progress: 0,
-    };
-
-    setDocuments([...documents, newDoc]);
-
-    toast({
-      title: "Uploading file...",
-      description: "Your document is being uploaded.",
+      try {
+        await ingestDocuments([file]);
+        setDocuments((prev) =>
+          prev.map((doc) =>
+            doc.id === docId ? { ...doc, status: "indexed", errorMessage: undefined } : doc
+          )
+        );
+        toast({
+          title: "Document ready",
+          description: `${file.name} has been indexed and is ready for queries.`,
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : typeof error === "string"
+            ? error
+            : "Failed to ingest document.";
+        setDocuments((prev) =>
+          prev.map((doc) =>
+            doc.id === docId ? { ...doc, status: "error", errorMessage: message } : doc
+          )
+        );
+        toast({
+          title: `Failed to index ${file.name}`,
+          description: message,
+          variant: "destructive",
+        });
+      }
     });
 
-    const uploadInterval = setInterval(() => {
-      setDocuments((prevDocs) =>
-        prevDocs.map((doc) =>
-          doc.id === newDoc.id
-            ? { ...doc, progress: Math.min((doc.progress || 0) + 10, 100) }
-            : doc
-        )
-      );
-    }, 300);
-
-    setTimeout(() => {
-      clearInterval(uploadInterval);
-      setDocuments((prevDocs) =>
-        prevDocs.map((doc) =>
-          doc.id === newDoc.id
-            ? { ...doc, status: "uploaded", progress: 100 }
-            : doc
-        )
-      );
-      toast({
-        title: "Upload complete",
-        description: "File uploaded successfully!",
-      });
-    }, 3000);
+    event.target.value = "";
   };
 
   const deleteDocument = (docId: string) => {
-    setDocuments(documents.filter((doc) => doc.id !== docId));
+    setDocuments((prev) => prev.filter((doc) => doc.id !== docId));
     toast({
       title: "Document deleted",
       description: "The document has been removed from your collection.",
@@ -916,32 +929,24 @@ export function AppSidebar() {
     if (doc.status === "uploading") {
       return (
         <div className="w-full mt-1">
-          <div className="h-2 bg-neutral-700 rounded-full overflow-hidden">
-            <div
-              className="h-2 bg-blue-500 transition-all duration-200"
-              style={{ width: `${doc.progress || 0}%` }}
-            />
-          </div>
-          <p className="text-xs text-neutral-400 mt-1">
-            Uploading... {doc.progress}%
-          </p>
+          <p className="text-xs text-neutral-400 mt-1">Indexing in Qdrant…</p>
         </div>
       );
     }
 
-    if (doc.status === "uploaded") {
+    if (doc.status === "indexed") {
       return (
         <div className="mt-2 space-y-2">
           <div className="flex items-center space-x-1">
             <CheckCircle className="w-4 h-4 text-green-400" />
             <span className="text-xs text-green-400">
-              File uploaded successfully
+              Document indexed successfully
             </span>
           </div>
           <Button
             size="sm"
             onClick={() =>
-              setSidebarMessage(`Summarize ${doc.name} document`)
+              setSidebarRequest({ type: "summarize", filenames: [doc.name] })
             }
             className="bg-blue-600 hover:bg-blue-700 text-xs text-white px-2 py-1 h-auto"
           >
@@ -955,7 +960,7 @@ export function AppSidebar() {
       return (
         <div className="flex items-center space-x-1 mt-1">
           <AlertCircle className="w-4 h-4 text-red-400" />
-          <span className="text-xs text-red-400">Error uploading</span>
+          <span className="text-xs text-red-400">{doc.errorMessage ?? "Failed to index"}</span>
         </div>
       );
     }
@@ -1029,7 +1034,7 @@ export function AppSidebar() {
                               {doc.name}
                             </p>
                             <p className="text-xs text-neutral-400">
-                              {doc.size}
+                              {doc.sizeLabel}
                             </p>
                             {getStatusDisplay(doc)}
                           </div>

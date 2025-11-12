@@ -1,20 +1,28 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useMemo, useState, ReactNode } from "react";
+
+export type SidebarRequest =
+  | { type: "query"; text: string }
+  | { type: "summarize"; filenames: string[] };
 
 interface ChatContextType {
-  sidebarMessage: string | null;
-  setSidebarMessage: (message: string | null) => void;
+  sidebarRequest: SidebarRequest | null;
+  setSidebarRequest: (request: SidebarRequest | null) => void;
+  selectedModel: string | null;
+  setSelectedModel: (modelId: string | null) => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export const ChatProvider = ({ children }: { children: ReactNode }) => {
-  const [sidebarMessage, setSidebarMessage] = useState<string | null>(null);
+  const [sidebarRequest, setSidebarRequest] = useState<SidebarRequest | null>(null);
+  const [selectedModel, setSelectedModel] = useState<string | null>(null);
 
-  return (
-    <ChatContext.Provider value={{ sidebarMessage, setSidebarMessage }}>
-      {children}
-    </ChatContext.Provider>
+  const value = useMemo(
+    () => ({ sidebarRequest, setSidebarRequest, selectedModel, setSelectedModel }),
+    [sidebarRequest, selectedModel]
   );
+
+  return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
 };
 
 export const useChatContext = () => {

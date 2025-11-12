@@ -1,4 +1,3 @@
-// Load env from server/.env explicitly to avoid cwd ambiguity
 require("dotenv").config({ path: require("path").join(__dirname, ".env") });
 const express = require("express");
 const passport = require("passport");
@@ -8,6 +7,22 @@ const GitHubStrategy = require("passport-github2").Strategy;
 const cors = require("cors");
 const axios = require("axios");
 const cookieParser = require("cookie-parser");
+const path = require("path");
+const multer = require("multer");
+const Module = require("module");
+
+const extraModulePaths = [
+  path.join(__dirname, "node_modules"),
+  path.join(__dirname, "..", "node_modules"),
+];
+extraModulePaths.forEach((modulePath) => {
+  if (!Module.globalPaths.includes(modulePath)) {
+    Module.globalPaths.push(modulePath);
+  }
+});
+
+const createAiRouter = require(path.join(__dirname, "..", "ai_services", "routers", "aiRouter"));
+const aiRouter = createAiRouter({ express, multer });
 
 const app = express();
 app.use(express.json());
@@ -247,6 +262,8 @@ async function checkSession(req, res, next) {
     return res.status(500).json({ message: "Server error" });
   }
 }
+
+app.use("/ai", checkSession, aiRouter);
 
 // Status check endpoint (expiry-aware)
 app.get("/status", checkSession, (req, res) => {

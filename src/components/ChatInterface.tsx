@@ -1,346 +1,3 @@
-// import { useState } from "react";
-// import { Send, Bot, User } from "lucide-react";
-// import { Button } from "@/components/ui/button";
-// import { Textarea } from "@/components/ui/textarea";
-// import {
-//   Select,
-//   SelectContent,
-//   SelectItem,
-//   SelectTrigger,
-//   SelectValue,
-// } from "@/components/ui/select";
-
-// interface Message {
-//   id: string;
-//   content: string;
-//   sender: "user" | "assistant";
-//   timestamp: Date;
-// }
-
-// const ChatInterface = () => {
-//   const [messages, setMessages] = useState<Message[]>([]);
-//   const [inputValue, setInputValue] = useState("");
-//   const [selectedModel, setSelectedModel] = useState("gpt-4");
-//   const [isLoading, setIsLoading] = useState(false);
-
-//   const models = [
-//     { value: "gpt-4", label: "GPT-4" },
-//     { value: "claude-3", label: "Claude 3" },
-//     { value: "mistral-large", label: "Mistral Large" },
-//     { value: "llama-2", label: "LLaMA 2" }
-//   ];
-
-//   const handleSendMessage = async () => {
-//     if (!inputValue.trim()) return;
-
-//     const userMessage: Message = {
-//       id: Date.now().toString(),
-//       content: inputValue,
-//       sender: "user",
-//       timestamp: new Date()
-//     };
-
-//     setMessages(prev => [...prev, userMessage]);
-//     setInputValue("");
-//     setIsLoading(true);
-
-//     // Simulate AI response
-//     setTimeout(() => {
-//       const aiMessage: Message = {
-//         id: (Date.now() + 1).toString(),
-//         content: `I'm a demo AI assistant using ${models.find(m => m.value === selectedModel)?.label}. I've received your message: "${userMessage.content}". This is a simulated response for demonstration purposes.`,
-//         sender: "assistant",
-//         timestamp: new Date()
-//       };
-      
-//       setMessages(prev => [...prev, aiMessage]);
-//       setIsLoading(false);
-//     }, 1500);
-//   };
-
-//   const handleKeyPress = (e: React.KeyboardEvent) => {
-//     if (e.key === 'Enter' && !e.shiftKey) {
-//       e.preventDefault();
-//       handleSendMessage();
-//     }
-//   };
-
-//   return (
-//     <div className="flex flex-col h-full">
-//       {/* Chat Header */}
-//       <div className="border-b border-border/20 p-4">
-//         <div className="flex items-center justify-between">
-//           <h2 className="text-xl font-semibold">AI Chat</h2>
-//           <Select value={selectedModel} onValueChange={setSelectedModel}>
-//             <SelectTrigger className="w-48">
-//               <SelectValue />
-//             </SelectTrigger>
-//             <SelectContent>
-//               {models.map((model) => (
-//                 <SelectItem key={model.value} value={model.value}>
-//                   {model.label}
-//                 </SelectItem>
-//               ))}
-//             </SelectContent>
-//           </Select>
-//         </div>
-//       </div>
-
-//       {/* Messages Area */}
-//       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-//         {messages.length === 0 ? (
-//           <div className="text-center py-12">
-//             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-//               <Bot className="w-8 h-8 text-primary" />
-//             </div>
-//             <h3 className="text-xl font-semibold mb-2">Hello, User! 👋</h3>
-//             <p className="text-muted-foreground max-w-md mx-auto">
-//               I'm your AI assistant. Ask me anything or upload documents to get started. 
-//               I can help you analyze content, answer questions, and have meaningful conversations.
-//             </p>
-//           </div>
-//         ) : (
-//           messages.map((message) => (
-//             <div
-//               key={message.id}
-//               className={`flex items-start space-x-3 animate-fade-in ${
-//                 message.sender === "user" ? "justify-end" : ""
-//               }`}
-//             >
-//               {message.sender === "assistant" && (
-//                 <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-//                   <Bot className="w-4 h-4 text-primary" />
-//                 </div>
-//               )}
-              
-//               <div
-//                 className={`max-w-[70%] rounded-2xl p-4 ${
-//                   message.sender === "user"
-//                     ? "bg-primary text-primary-foreground"
-//                     : "card-gradient"
-//                 }`}
-//               >
-//                 <p className="whitespace-pre-wrap">{message.content}</p>
-//                 <span className="text-xs opacity-70 mt-2 block">
-//                   {message.timestamp.toLocaleTimeString()}
-//                 </span>
-//               </div>
-              
-//               {message.sender === "user" && (
-//                 <div className="w-8 h-8 bg-accent/10 rounded-full flex items-center justify-center flex-shrink-0">
-//                   <User className="w-4 h-4 text-accent" />
-//                 </div>
-//               )}
-//             </div>
-//           ))
-//         )}
-        
-//         {isLoading && (
-//           <div className="flex items-start space-x-3 animate-fade-in">
-//             <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-//               <Bot className="w-4 h-4 text-primary" />
-//             </div>
-//             <div className="card-gradient rounded-2xl p-4">
-//               <div className="flex space-x-1">
-//                 <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-//                 <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: "0.2s" }} />
-//                 <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: "0.4s" }} />
-//               </div>
-//             </div>
-//           </div>
-//         )}
-//       </div>
-
-//       {/* Input Area */}
-//       <div className="border-t border-border/20 p-4">
-//         <div className="flex space-x-3 items-end">
-//           <div className="flex-1">
-//             <Textarea
-//               value={inputValue}
-//               onChange={(e) => setInputValue(e.target.value)}
-//               onKeyPress={handleKeyPress}
-//               placeholder="Type your message here... (Press Enter to send, Shift+Enter for new line)"
-//               className="chat-input resize-none min-h-[60px] max-h-32"
-//               disabled={isLoading}
-//             />
-//           </div>
-//           <Button
-//             onClick={handleSendMessage}
-//             disabled={!inputValue.trim() || isLoading}
-//             className="bg-gradient-primary hover:opacity-90 transition-opacity px-6 py-3"
-//           >
-//             <Send className="w-4 h-4" />
-//           </Button>
-//         </div>
-//         <p className="text-xs text-muted-foreground mt-2">
-//           Using {models.find(m => m.value === selectedModel)?.label} • 
-//           Press Enter to send, Shift+Enter for new line
-//         </p>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default ChatInterface;
-
-// import { useState } from "react";
-// import { Send, Bot, User, Menu } from "lucide-react";
-// import { Button } from "@/components/ui/button";
-// import { Textarea } from "@/components/ui/textarea";
-// import { useSidebar } from "@/components/ui/sidebar";
-// import { useAuth } from "@/context/AuthContext";
-// import {
-//   Select,
-//   SelectContent,
-//   SelectItem,
-//   SelectTrigger,
-//   SelectValue,
-// } from "@/components/ui/select";
-
-// interface Message {
-//   id: string;
-//   content: string;
-//   sender: "user" | "assistant";
-//   timestamp: Date;
-// }
-
-// const ChatInterface = () => {
-//   const [messages, setMessages] = useState<Message[]>([]);
-//   const [inputValue, setInputValue] = useState("");
-//   const [selectedModel, setSelectedModel] = useState("gpt-4");
-//   const [isLoading, setIsLoading] = useState(false);
-//   const { toggleSidebar, state } = useSidebar();
-//   const sidebarOpen = state === "expanded";
-//   const { user } = useAuth();
-//   const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:3000";
-
-//   const handleLogout = () => {
-//     // Let the server clear the session then redirect back to /login
-//     window.location.href = `${API_BASE}/logout`;
-//   };
-
-//   const models = [
-//     { value: "gpt-4", label: "GPT-4" },
-//     { value: "claude-3", label: "Claude 3" },
-//     { value: "mistral-large", label: "Mistral Large" },
-//     { value: "llama-2", label: "LLaMA 2" }
-//   ];
-
-//   const handleSendMessage = async () => {
-//     if (!inputValue.trim()) return;
-
-//     const userMessage: Message = {
-//       id: Date.now().toString(),
-//       content: inputValue,
-//       sender: "user",
-//       timestamp: new Date()
-//     };
-
-//     setMessages(prev => [...prev, userMessage]);
-//     setInputValue("");
-//     setIsLoading(true);
-
-//     // Simulate AI response
-//     setTimeout(() => {
-//       const aiMessage: Message = {
-//         id: (Date.now() + 1).toString(),
-//         content: `I'm a demo AI assistant using ${models.find(m => m.value === selectedModel)?.label}. I've received your message: "${userMessage.content}". This is a simulated response for demonstration purposes.`,
-//         sender: "assistant",
-//         timestamp: new Date()
-//       };
-      
-//       setMessages(prev => [...prev, aiMessage]);
-//       setIsLoading(false);
-//     }, 1500);
-//   };
-
-//   const handleKeyPress = (e: React.KeyboardEvent) => {
-//     if (e.key === 'Enter' && !e.shiftKey) {
-//       e.preventDefault();
-//       handleSendMessage();
-//     }
-//   };
-
-//   return (
-//     <div className="flex flex-col h-full bg-neutral-900">
-//       {/* Chat Header */}
-//       <div className="border-b border-neutral-700 p-4">
-//         <div className="flex items-center justify-between">
-//           <Button
-//             variant="ghost"
-//             size="sm"
-//             onClick={toggleSidebar}
-//             className="text-neutral-400 hover:text-white hover:bg-neutral-800"
-//           >
-//             <Menu className="w-5 h-5" />
-//           </Button>
-//           <div className="flex items-center gap-2">
-//             <Select value={selectedModel} onValueChange={setSelectedModel}>
-//               <SelectTrigger className="w-48 bg-neutral-800 border-neutral-600 text-white">
-//                 <SelectValue />
-//               </SelectTrigger>
-//               <SelectContent className="bg-neutral-800 border-neutral-600">
-//                 {models.map((model) => (
-//                   <SelectItem key={model.value} value={model.value} className="text-white hover:bg-neutral-700">
-//                     {model.label}
-//                   </SelectItem>
-//                 ))}
-//               </SelectContent>
-//             </Select>
-//             <Button
-//               variant="outline"
-//               size="sm"
-//               onClick={handleLogout}
-//               className="border-neutral-600 text-neutral-200 hover:bg-neutral-800"
-//             >
-//               Logout
-//             </Button>
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* Messages Area */}
-//       <div className={`flex-1 overflow-y-auto transition-all duration-300 ${sidebarOpen ? 'ml-8' : ''}`}>
-//         {messages.length === 0 ? (
-//           <div className="flex items-center justify-center h-full">
-//             <div className="text-center">
-//               <div className="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
-//                 <Bot className="w-8 h-8 text-blue-400" />
-//               </div>
-//               <h3 className="text-2xl font-semibold mb-2 text-white">{`Hello ${user?.firstName || "User"}!`}</h3>
-//               <p className="text-neutral-400 max-w-md mx-auto">
-//                 What's on your mind today?
-//               </p>
-//             </div>
-//           </div>
-//         ) : (
-//           <div className="space-y-6 p-4">
-//             {messages.map((message) => (
-//               <div key={message.id} className="animate-fade-in">
-//                 {message.sender === "user" ? (
-//                   <div className="flex justify-end">
-//                     <div className="max-w-[70%] bg-blue-600 text-white rounded-2xl px-4 py-3">
-//                       <p className="whitespace-pre-wrap">{message.content}</p>
-//                     </div>
-//                   </div>
-//                 ) : (
-//                   <div className="flex items-start space-x-3">
-//                     <div className="w-8 h-8 bg-green-600/20 rounded-full flex items-center justify-center flex-shrink-0">
-//                       <Bot className="w-4 h-4 text-green-400" />
-//                     </div>
-//                     <div className="max-w-[70%] bg-neutral-800 text-white rounded-2xl px-4 py-3">
-//                       <p className="whitespace-pre-wrap">{message.content}</p>
-//                     </div>
-//                   </div>
-//                 )}
-//               </div>
-//             ))}
-            
-//             {isLoading && (
-//               <div className="flex items-start space-x-3 animate-fade-in">
-//                 <div className="w-8 h-8 bg-green-600/20 rounded-full flex items-center justify-center">
-//                   <Bot className="w-4 h-4 text-green-400" />
-//                 </div>
 //                 <div className="bg-gray-700 rounded-2xl px-4 py-3">
 //                   <div className="flex space-x-1">
 //                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" />
@@ -866,13 +523,13 @@
 
 // export default ChatInterface;
 
-import { useState, useEffect } from "react";
-import { Send, Bot, Menu } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { Send, Bot, Menu, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useAuth } from "@/context/AuthContext";
-import { useChatContext } from "@/context/ChatContext"; // ✅ import
+import { useChatContext, SidebarRequest } from "@/context/ChatContext";
 import {
   Select,
   SelectContent,
@@ -880,23 +537,84 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { fetchModels, ModelConfig, queryAI, summarizeDocuments } from "@/lib/aiClient";
+
+interface Citation {
+  id: string;
+  filename?: string;
+  pageNumber?: number;
+  score?: number;
+  snippet?: string;
+}
 
 interface Message {
   id: string;
   content: string;
   sender: "user" | "assistant";
   timestamp: Date;
+  citations?: Citation[];
+  isError?: boolean;
 }
+
+const makeId = () => (globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2));
+
+const truncate = (value: string, max = 160) => {
+  if (!value) return "";
+  return value.length > max ? `${value.substring(0, max)}…` : value;
+};
+
+const buildUserMessage = (content: string): Message => ({
+  id: makeId(),
+  content,
+  sender: "user",
+  timestamp: new Date(),
+});
+
+const buildAssistantMessage = (content: string, citations?: Citation[], isError = false): Message => ({
+  id: makeId(),
+  content,
+  sender: "assistant",
+  timestamp: new Date(),
+  citations,
+  isError,
+});
+
+const parseCitations = (matches: any[] = []): Citation[] =>
+  matches
+    .map((match, index) => {
+      const payload = match?.payload ?? {};
+      const metadata = payload.metadata ?? {};
+      const pageNumber = metadata.page_number ?? metadata.pageNumber;
+      return {
+        id: String(match?.id ?? `${index}`),
+        filename: metadata.filename,
+        pageNumber: typeof pageNumber === "number" ? pageNumber : Number(pageNumber) || undefined,
+        score: typeof match?.score === "number" ? match.score : undefined,
+        snippet: truncate(payload.text ?? ""),
+      } satisfies Citation;
+    })
+    .filter((citation) => Boolean(citation.filename || citation.snippet));
+
+const handleSidebarRequestDescription = (request: SidebarRequest) => {
+  if (request.type === "summarize") {
+    if (request.filenames.length === 0) return "Summarize indexed documents";
+    return `Summarize documents: ${request.filenames.join(", ")}`;
+  }
+  return request.text;
+};
 
 const ChatInterface = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
-  const [selectedModel, setSelectedModel] = useState("phi-3"); // ✅ Default model
   const [isLoading, setIsLoading] = useState(false);
+  const [models, setModels] = useState<ModelConfig[]>([]);
+  const [modelsLoading, setModelsLoading] = useState(true);
+  const [modelError, setModelError] = useState<string | null>(null);
   const { toggleSidebar, state } = useSidebar();
   const sidebarOpen = state === "expanded";
   const { user } = useAuth();
-  const { sidebarMessage, setSidebarMessage } = useChatContext(); // ✅ receive sidebar message
+  const { sidebarRequest, setSidebarRequest, selectedModel, setSelectedModel } = useChatContext();
+  const selectedModelRef = useRef<string | null>(null);
 
   const API_BASE =
     (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:3000";
@@ -905,59 +623,123 @@ const ChatInterface = () => {
     window.location.href = `${API_BASE}/logout`;
   };
 
-  // ✅ Updated model list
-  const models = [
-    { value: "phi-3", label: "Phi-3 (Ollama)" }, // Default model
-    { value: "groq-llama3.3-70b", label: "Groq - Llama3.3 70B" },
-    { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash" },
-    { value: "groq-gpt-oss-120b", label: "Groq - GPT-OSS 120B" },
-  ];
-
-  const handleSendMessage = async (customInput?: string) => {
-    const text = customInput ?? inputValue;
-    if (!text.trim()) return;
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content: text,
-      sender: "user",
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setInputValue("");
-    setIsLoading(true);
-
-    // 🧠 Simulated AI response
-    setTimeout(() => {
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: `I'm a demo AI assistant using ${
-          models.find((m) => m.value === selectedModel)?.label
-        }. I've received your message: "${userMessage.content}". This is a simulated response for demonstration purposes.`,
-        sender: "assistant",
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, aiMessage]);
-      setIsLoading(false);
-    }, 1500);
-  };
-
-  // ✅ Auto-send message from sidebar
   useEffect(() => {
-    if (sidebarMessage) {
-      handleSendMessage(sidebarMessage);
-      setSidebarMessage(null);
-    }
-  }, [sidebarMessage]);
+    selectedModelRef.current = selectedModel;
+  }, [selectedModel]);
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
+  useEffect(() => {
+    let active = true;
+    setModelsLoading(true);
+
+    fetchModels()
+      .then((fetched) => {
+        if (!active) return;
+        setModels(fetched);
+        setModelError(null);
+        if (!selectedModelRef.current && fetched.length) {
+          setSelectedModel(fetched[0].id);
+        }
+      })
+      .catch((error) => {
+        if (!active) return;
+        setModelError(error instanceof Error ? error.message : String(error));
+      })
+      .finally(() => {
+        if (active) setModelsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [setSelectedModel]);
+
+  const sendMessage = useCallback(
+    async (rawText: string) => {
+      const text = rawText.trim();
+      if (!text) return;
+
+      if (!selectedModel) {
+        setMessages((prev) => [
+          ...prev,
+          buildAssistantMessage("Please select a model before sending a message.", undefined, true),
+        ]);
+        return;
+      }
+
+      const userMessage = buildUserMessage(text);
+      setMessages((prev) => [...prev, userMessage]);
+      setInputValue("");
+      setIsLoading(true);
+
+      try {
+        const response = await queryAI(text, selectedModel);
+        const citations = parseCitations(response.matches);
+        setMessages((prev) => [...prev, buildAssistantMessage(response.answer, citations)]);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        setMessages((prev) => [...prev, buildAssistantMessage(`Error: ${message}`, undefined, true)]);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [selectedModel]
+  );
+
+  const processSidebarRequest = useCallback(
+    async (request: SidebarRequest) => {
+      try {
+        if (request.type === "query") {
+          await sendMessage(request.text);
+          return;
+        }
+
+        const description = handleSidebarRequestDescription(request);
+        setMessages((prev) => [...prev, buildUserMessage(description)]);
+
+        if (!selectedModel) {
+          setMessages((prev) => [
+            ...prev,
+            buildAssistantMessage("Please select a model before summarizing.", undefined, true),
+          ]);
+          return;
+        }
+
+        setIsLoading(true);
+        try {
+          const { summary } = await summarizeDocuments(selectedModel, request.filenames);
+          setMessages((prev) => [...prev, buildAssistantMessage(summary)]);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          setMessages((prev) => [
+            ...prev,
+            buildAssistantMessage(`Error generating summary: ${message}`, undefined, true),
+          ]);
+        } finally {
+          setIsLoading(false);
+        }
+      } finally {
+        setSidebarRequest(null);
+      }
+    },
+    [selectedModel, sendMessage, setSidebarRequest]
+  );
+
+  useEffect(() => {
+    if (!sidebarRequest) return;
+    void processSidebarRequest(sidebarRequest);
+  }, [sidebarRequest, processSidebarRequest]);
+
+  const handleKeyPress = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      void sendMessage(inputValue);
     }
   };
+
+  const selectedModelLabel = useMemo(
+    () => models.find((model) => model.id === selectedModel)?.display_name,
+    [models, selectedModel]
+  );
 
   return (
     <div className="flex flex-col h-full bg-neutral-900">
@@ -973,18 +755,22 @@ const ChatInterface = () => {
             <Menu className="w-5 h-5" />
           </Button>
           <div className="flex items-center gap-2">
-            <Select value={selectedModel} onValueChange={setSelectedModel}>
-              <SelectTrigger className="w-48 bg-neutral-800 border-neutral-600 text-white">
-                <SelectValue />
+            <Select
+              value={selectedModel ?? undefined}
+              onValueChange={setSelectedModel}
+              disabled={modelsLoading || !models.length}
+            >
+              <SelectTrigger className="w-56 bg-neutral-800 border-neutral-600 text-white">
+                <SelectValue placeholder={modelsLoading ? "Loading models..." : "Select model"} />
               </SelectTrigger>
               <SelectContent className="bg-neutral-800 border-neutral-600">
                 {models.map((model) => (
                   <SelectItem
-                    key={model.value}
-                    value={model.value}
+                    key={model.id}
+                    value={model.id}
                     className="text-white hover:bg-neutral-700"
                   >
-                    {model.label}
+                    {model.display_name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -999,6 +785,9 @@ const ChatInterface = () => {
             </Button>
           </div>
         </div>
+        {modelError && (
+          <p className="mt-2 text-xs text-red-400">Failed to load models: {modelError}</p>
+        )}
       </div>
 
       {/* Messages Area */}
@@ -1040,8 +829,34 @@ const ChatInterface = () => {
                     <div className="w-8 h-8 bg-green-600/20 rounded-full flex items-center justify-center flex-shrink-0">
                       <Bot className="w-4 h-4 text-green-400" />
                     </div>
-                    <div className="max-w-[70%] bg-neutral-800 text-white rounded-2xl px-4 py-3">
+                    <div
+                      className={`max-w-[70%] rounded-2xl px-4 py-3 ${
+                        message.isError ? "bg-red-900/40 text-red-100" : "bg-neutral-800 text-white"
+                      }`}
+                    >
                       <p className="whitespace-pre-wrap">{message.content}</p>
+                      {message.citations?.length ? (
+                        <div className="mt-3 space-y-2 border-t border-white/10 pt-2">
+                          <p className="text-xs font-semibold tracking-wide text-white/70">Sources</p>
+                          <ul className="space-y-2 text-xs text-white/80">
+                            {message.citations.map((citation) => (
+                              <li key={citation.id} className="flex items-start gap-2">
+                                <FileText className="mt-0.5 h-3 w-3 flex-shrink-0" />
+                                <div>
+                                  <span className="font-medium">{citation.filename ?? "Unknown"}</span>
+                                  {citation.pageNumber ? ` • Page ${citation.pageNumber}` : ""}
+                                  {typeof citation.score === "number"
+                                    ? ` • Score ${citation.score.toFixed(3)}`
+                                    : ""}
+                                  {citation.snippet ? (
+                                    <p className="mt-1 text-white/60">“{citation.snippet}”</p>
+                                  ) : null}
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 )}
@@ -1090,11 +905,11 @@ const ChatInterface = () => {
               onKeyPress={handleKeyPress}
               placeholder="Message your AI assistant..."
               className="flex-1 bg-transparent border-none resize-none min-h-[24px] max-h-32 text-white placeholder-neutral-400 focus:ring-0 focus:outline-none p-2"
-              disabled={isLoading}
+              disabled={isLoading || modelsLoading || !selectedModel}
             />
             <Button
-              onClick={() => handleSendMessage()}
-              disabled={!inputValue.trim() || isLoading}
+              onClick={() => void sendMessage(inputValue)}
+              disabled={!inputValue.trim() || isLoading || !selectedModel}
               className="bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-600 disabled:opacity-50 rounded-lg p-2 transition-colors"
               size="sm"
             >
@@ -1102,8 +917,8 @@ const ChatInterface = () => {
             </Button>
           </div>
           <p className="text-xs text-neutral-500 text-center mt-2">
-            Using {models.find((m) => m.value === selectedModel)?.label} • Press
-            Enter to send, Shift+Enter for new line
+            {selectedModelLabel ? `Using ${selectedModelLabel}` : "Select a model to begin."} • Press Enter to send,
+            Shift+Enter for new line
           </p>
         </div>
       </div>

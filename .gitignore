@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+ai_services/embeddings/worker/venv/
+# Virtual environments
+venv/
+*/venv/
+.env/
+*/.env/
+.env
+*.env

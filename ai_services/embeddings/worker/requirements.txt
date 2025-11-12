@@ -1,0 +1,5 @@
+fastapi==0.115.0
+uvicorn[standard]==0.29.0
+python-dotenv==1.0.1
+FlagEmbedding==1.2.10
+numpy>=1.24.0
