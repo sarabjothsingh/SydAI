@@ -37,7 +37,13 @@ async function ingestDocuments({ userId, documents = [] }) {
       },
     }));
 
-    const response = await ingestDocument({
+    // Basic validation: ensure vectors were produced for all chunks
+    if (!Array.isArray(vectors) || vectors.length !== chunks.length) {
+      console.error("/ingest error: embedTexts returned invalid vectors", { filename: doc.filename, expected: chunks.length, got: vectors?.length });
+      continue;
+    }
+
+    const payload = {
       userId,
       document: {
         name: doc.filename,
@@ -49,10 +55,27 @@ async function ingestDocuments({ userId, documents = [] }) {
         },
         chunks: preparedChunks,
       },
-    });
+    };
 
-    if (response?.document) {
-      processedDocuments.push(response.document);
+    try {
+      // Log a small summary to help debugging server errors
+      console.log(`/ingest sending payload for ${doc.filename}: chunks=${preparedChunks.length}, sizeBytes=${payload.document.sizeBytes}`);
+      const response = await ingestDocument(payload);
+      if (response?.document) {
+        processedDocuments.push(response.document);
+      }
+    } catch (err) {
+      // Surface structured error info from the database client when available
+      const errInfo = {
+        message: err.message,
+        status: err.status,
+        body: err.body,
+        url: err.url,
+        stack: err.stack,
+      };
+      console.error(`/ingest error`, errInfo);
+      // Continue processing other documents rather than fail-all
+      continue;
     }
   }
 

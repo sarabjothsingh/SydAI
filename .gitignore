@@ -25,8 +25,12 @@ dist-ssr
 ai_services/embeddings/worker/venv/
 # Virtual environments
 venv/
-*/venv/
+*/.venv/
 .env/
 */.env/
 .env
 *.env
+
+.venv/
+venv/
+*/.venv/

@@ -9,9 +9,28 @@ function getBaseUrl() {
 }
 
 async function handleResponse(response) {
+  // If not OK, try to parse JSON body and include status + body on the thrown Error
   if (!response.ok) {
-    const text = await response.text().catch(() => "");
-    throw new Error(text || `Database service error: ${response.status}`);
+    let bodyText = "";
+    let parsed = null;
+    try {
+      const contentType = response.headers.get("content-type") || "";
+      if (contentType.includes("application/json")) {
+        parsed = await response.json();
+        bodyText = JSON.stringify(parsed);
+      } else {
+        bodyText = await response.text().catch(() => "");
+      }
+    } catch (err) {
+      bodyText = `Failed to read error body: ${err.message}`;
+    }
+
+    const err = new Error(parsed?.message || bodyText || `Database service error: ${response.status}`);
+    err.status = response.status;
+    err.body = parsed ?? bodyText;
+    err.statusText = response.statusText;
+    err.url = response.url;
+    throw err;
   }
 
   const contentType = response.headers.get("content-type") || "";

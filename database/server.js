@@ -45,6 +45,18 @@ mongoose
     process.exit(1);
   });
 
+const isProd = process.env.NODE_ENV === "production";
+function sendError(res, err, tag = "[DB]") {
+  // Log full error server-side for debugging
+  console.error(tag, err);
+  const status = (err && err.status) || 500;
+  const body = { message: isProd ? "Server error" : (err && err.message) || "Server error" };
+  if (!isProd && err && err.stack) {
+    body.stack = err.stack;
+  }
+  return res.status(status).json(body);
+}
+
 function buildUserFilter(userId) {
   return {
     must: [
@@ -67,8 +79,7 @@ app.get("/documents", async (req, res) => {
     const documents = await Document.find({ userId }).sort({ updatedAt: -1 }).lean();
     res.json({ documents });
   } catch (err) {
-    console.error("[DB] list documents error:", err);
-    res.status(500).json({ message: "Server error" });
+    return sendError(res, err, "[DB] list documents error:");
   }
 });
 
@@ -80,6 +91,18 @@ app.post("/documents/ingest", async (req, res) => {
 
     if (!userId || !name || !Array.isArray(chunks) || chunks.length === 0) {
       return res.status(400).json({ message: "Invalid payload" });
+    }
+
+    // Basic validation of chunk vectors
+    for (let i = 0; i < chunks.length; i++) {
+      const c = chunks[i];
+      if (!Array.isArray(c.vector) || c.vector.length === 0) {
+        throw new Error(`Invalid or missing vector for chunk index ${i}`);
+      }
+      if (c.vector.length !== EMBEDDING_DIM) {
+        // warn but allow: some embedding providers vary dims; still surface as info
+        console.warn(`[DB] chunk vector dimension mismatch for ${name} index ${i}: expected=${EMBEDDING_DIM} got=${c.vector.length}`);
+      }
     }
 
     await ensureCollectionExists(QDRANT_COLLECTION, EMBEDDING_DIM);
@@ -124,8 +147,7 @@ app.post("/documents/ingest", async (req, res) => {
 
     res.json({ ok: true, document: documentRecord });
   } catch (err) {
-    console.error("[DB] ingest document error:", err);
-    res.status(500).json({ message: "Server error" });
+    return sendError(res, err, "[DB] ingest document error:");
   }
 });
 
@@ -151,8 +173,7 @@ app.delete("/documents/:id", async (req, res) => {
 
     res.json({ ok: true });
   } catch (err) {
-    console.error("[DB] delete document error:", err);
-    res.status(500).json({ message: "Server error" });
+    return sendError(res, err, "[DB] delete document error:");
   }
 });
 
@@ -180,8 +201,7 @@ app.post("/vectors/search", async (req, res) => {
 
     res.json({ matches: results });
   } catch (err) {
-    console.error("[DB] vector search error:", err);
-    res.status(500).json({ message: "Server error" });
+    return sendError(res, err, "[DB] vector search error:");
   }
 });
 
@@ -220,8 +240,7 @@ app.post("/vectors/scroll", async (req, res) => {
 
     res.json({ points });
   } catch (err) {
-    console.error("[DB] vector scroll error:", err);
-    res.status(500).json({ message: "Server error" });
+    return sendError(res, err, "[DB] vector scroll error:");
   }
 });
 
@@ -232,7 +251,7 @@ app.get("/users/:id", async (req, res) => {
     if (!user) return res.status(404).json({ message: "Not found" });
     res.json(user);
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    return sendError(res, err, "[DB] user read error:");
   }
 });
 
@@ -255,8 +274,7 @@ app.post("/users/google/upsert", async (req, res) => {
     }
     res.json(user);
   } catch (err) {
-    console.error("[DB] google upsert error:", err);
-    res.status(500).json({ message: "Server error" });
+    return sendError(res, err, "[DB] google upsert error:");
   }
 });
 
@@ -279,8 +297,7 @@ app.post("/users/github/upsert", async (req, res) => {
     }
     res.json(user);
   } catch (err) {
-    console.error("[DB] github upsert error:", err);
-    res.status(500).json({ message: "Server error" });
+    return sendError(res, err, "[DB] github upsert error:");
   }
 });
 
@@ -297,8 +314,7 @@ app.post("/sessions/touch", async (req, res) => {
     );
     res.json({ ok: true, user: updated });
   } catch (err) {
-    console.error("[DB] touch error:", err);
-    res.status(500).json({ message: "Server error" });
+    return sendError(res, err, "[DB] touch error:");
   }
 });
 
@@ -321,8 +337,7 @@ app.post("/sessions/clear-expired", async (req, res) => {
     );
     res.json({ ok: true, user: updated });
   } catch (err) {
-    console.error("[DB] clear-expired error:", err);
-    res.status(500).json({ message: "Server error" });
+    return sendError(res, err, "[DB] clear-expired error:");
   }
 });
 
@@ -346,8 +361,7 @@ app.post("/logout", async (req, res) => {
     );
     res.json({ ok: true, user: updated });
   } catch (err) {
-    console.error("[DB] logout error:", err);
-    res.status(500).json({ message: "Server error" });
+    return sendError(res, err, "[DB] logout error:");
   }
 });
 
@@ -373,8 +387,7 @@ app.post("/sessions/logout-by-token", async (req, res) => {
     );
     res.json({ ok: true, user: updated });
   } catch (err) {
-    console.error("[DB] logout-by-token error:", err);
-    res.status(500).json({ message: "Server error" });
+    return sendError(res, err, "[DB] logout-by-token error:");
   }
 });
 

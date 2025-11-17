@@ -156,12 +156,12 @@ import mannat from "@/assets/mannat.jpg";
 
 const TeamSection = () => {
   const teamMembers = [
-    { name: "Agnishwar Raychaudhury", image: agni },
+    { name: "Agnishwar Raychaudhuri", image: agni },
     { name: "Gautam Sharma", image: gautam },
     { name: "Samarth Tanay", image: samarth },
     { name: "Sarab Bhatia", image: sarab },
     { name: "Yuvraj Chawla", image: yuvraj },
-    { name: "Mannat Ashish", image: mannat },
+    { name: "Mannat Ashish Nayak", image: mannat },
   ];
 
   return (
