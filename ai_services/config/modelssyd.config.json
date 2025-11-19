@@ -1,0 +1,30 @@
+[
+  {
+    "display_name": "Groq - Llama3.3 70B",
+    "type": "groq",
+    "id": "llama-3.3-70b-versatile",
+    "summary_token_limit": 8000,
+    "summary_overlap_tokens": 600
+  },
+  {
+    "display_name": "Gemini 1.5 Flash",
+    "type": "google_genai",
+    "id": "gemini-1.5-flash",
+    "summary_token_limit": 60000,
+    "summary_overlap_tokens": 2000
+  },
+  {
+    "display_name": "Phi-3 (Ollama)",
+    "type": "ollama",
+    "id": "phi3:mini",
+    "summary_token_limit": 4000,
+    "summary_overlap_tokens": 400
+  },
+  {
+    "display_name": "Groq - GPT-OSS 120B",
+    "type": "groq",
+    "id": "openai/gpt-oss-120b",
+    "summary_token_limit": 8000,
+    "summary_overlap_tokens": 600
+  }
+]
