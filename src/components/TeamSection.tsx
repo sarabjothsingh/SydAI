@@ -144,8 +144,101 @@
 // export default TeamSection;
 
 
+// import PixelTransition from "./PixelTransition";
+// import ShinyText from "./shinytext";
+
+// import agni from "@/assets/agni.jpg";
+// import gautam from "@/assets/gautam.jpg";
+// import samarth from "@/assets/samarth.jpg";
+// import sarab from "@/assets/sarab.jpg";
+// import yuvraj from "@/assets/yuvraj.jpg";
+// import mannat from "@/assets/mannat.jpg";
+
+// const TeamSection = () => {
+//   const teamMembers = [
+//     { name: "Agnishwar Raychaudhuri", image: agni },
+//     { name: "Gautam Sharma", image: gautam },
+//     { name: "Samarth Tanay", image: samarth },
+//     { name: "Sarab Bhatia", image: sarab },
+//     { name: "Yuvraj Chawla", image: yuvraj },
+//     { name: "Mannat Ashish Nayak", image: mannat },
+//   ];
+
+//   return (
+//     <section id="team" className="py-20 relative">
+//       <div className="container mx-auto px-4">
+//         <div className="text-center mb-16 animate-slide-up">
+//           <ShinyText
+//             text="Meet the Team"
+//             disabled={false}
+//             speed={3}
+//             className="text-4xl md:text-5xl font-bold mb-8 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent inline-block"
+//           />
+//           <p className="text-foreground/70 text-lg max-w-2xl mx-auto mt-4">
+//             The brilliant minds behind our project.
+//           </p>
+//         </div>
+
+//         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+//           {teamMembers.map((member, index) => (
+//             <div key={index} className="rounded-2xl overflow-hidden">
+//               <PixelTransition
+//                 firstContent={
+//                   <img
+//                     src={member.image}
+//                     alt={member.name}
+//                     style={{
+//                       width: "100%",
+//                       height: "100%",
+//                       objectFit: "cover",
+//                       display: "block",
+//                     }}
+//                   />
+//                 }
+//                 secondContent={
+//                   <div
+//                     style={{
+//                       width: "100%",
+//                       height: "100%",
+//                       display: "grid",
+//                       placeItems: "center",
+//                       backgroundColor: "#111",
+//                     }}
+//                   >
+//                     <p
+//                       style={{
+//                         fontWeight: 800,
+//                         fontSize: "1.5rem",
+//                         color: "#fff",
+//                         textAlign: "center",
+//                       }}
+//                     >
+//                       {member.name}
+//                     </p>
+//                   </div>
+//                 }
+//                 gridSize={12}
+//                 pixelColor="#ffffff"
+//                 once={false}
+//                 animationStepDuration={0.3}
+//                 className="custom-pixel-card cursor-pointer rounded-2xl"
+//               />
+//             </div>
+//           ))}
+//         </div>
+//       </div>
+//     </section>
+//   );
+// };
+
+// export default TeamSection;
+
+
+"use client";
+
 import PixelTransition from "./PixelTransition";
 import ShinyText from "./shinytext";
+import { BackgroundBeams } from "./registry/background-beams";
 
 import agni from "@/assets/agni.jpg";
 import gautam from "@/assets/gautam.jpg";
@@ -165,8 +258,14 @@ const TeamSection = () => {
   ];
 
   return (
-    <section id="team" className="py-20 relative">
-      <div className="container mx-auto px-4">
+    <section
+      id="team"
+      className="py-20 relative bg-black overflow-hidden"
+    >
+      {/* Background Effect (same as About & Contact sections) */}
+      <BackgroundBeams />
+
+      <div className="container mx-auto px-4 relative z-10">
         <div className="text-center mb-16 animate-slide-up">
           <ShinyText
             text="Meet the Team"
