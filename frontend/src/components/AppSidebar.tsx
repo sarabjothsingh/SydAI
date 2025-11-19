@@ -876,7 +876,7 @@ export function AppSidebar() {
       toast({
         title: "Upload limit reached",
         description:
-          "You can upload a maximum of 5 documents. Please delete one to add a new file.",
+            "You can upload a maximum of 5 documents. Please delete one to add a new file.",
         variant: "destructive",
       });
       event.target.value = "";
@@ -927,24 +927,51 @@ export function AppSidebar() {
       });
 
       try {
-        await ingestDocuments([file]);
-        setDocuments((prev) => prev.filter((doc) => doc.id !== tempId));
-        await loadDocuments();
-        toast({
-          title: "Document ready",
-          description: `${file.name} has been indexed and is ready for queries.`,
-        });
+        // Expect ingestDocuments to return the created StoredDocument or an array
+        const result = await ingestDocuments([file]);
+        const createdArray = Array.isArray(result) ? result : result ? [result] : [];
+        const created = createdArray[0];
+
+        if (created && created._id) {
+          // Replace the temporary entry with the persisted document (use persisted id)
+          setDocuments((prev) =>
+              prev.map((doc) =>
+                  doc.id === tempId
+                      ? {
+                        id: created._id,
+                        persistedId: created._id,
+                        name: created.name ?? doc.name,
+                        sizeLabel: formatFileSize(created.sizeBytes ?? file.size),
+                        status: "indexed",
+                      }
+                      : doc
+              )
+          );
+
+          toast({
+            title: "Document ready",
+            description: `${file.name} has been indexed and is ready for queries.`,
+          });
+        } else {
+          // Fallback: if server didn't return the created doc, reload from server
+          setDocuments((prev) => prev.filter((doc) => doc.id !== tempId));
+          await loadDocuments();
+          toast({
+            title: "Document ready",
+            description: `${file.name} has been indexed and is ready for queries.`,
+          });
+        }
       } catch (error) {
         const message =
-          error instanceof Error
-            ? error.message
-            : typeof error === "string"
-            ? error
-            : "Failed to ingest document.";
+            error instanceof Error
+                ? error.message
+                : typeof error === "string"
+                    ? error
+                    : "Failed to ingest document.";
         setDocuments((prev) =>
-          prev.map((doc) =>
-            doc.id === tempId ? { ...doc, status: "error", errorMessage: message } : doc
-          )
+            prev.map((doc) =>
+                doc.id === tempId ? { ...doc, status: "error", errorMessage: message } : doc
+            )
         );
         toast({
           title: `Failed to index ${file.name}`,
