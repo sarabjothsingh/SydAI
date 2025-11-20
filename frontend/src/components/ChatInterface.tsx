@@ -530,6 +530,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useAuth } from "@/context/AuthContext";
 import { useChatContext, SidebarRequest } from "@/context/ChatContext";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   Select,
   SelectContent,
@@ -741,6 +743,57 @@ const ChatInterface = () => {
     [models, selectedModel]
   );
 
+  const renderMarkdown = (content: string, variant: "user" | "assistant") => (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      className={`prose prose-invert max-w-none text-sm leading-relaxed ${
+        variant === "assistant" ? "prose-headings:text-white prose-strong:text-white" : ""
+      }`}
+      components={{
+        p: ({ node, ...props }) => <p {...props} className="mb-3 last:mb-0" />,
+        ul: ({ node, ...props }) => <ul {...props} className="list-disc pl-6 mb-3" />,
+        ol: ({ node, ...props }) => <ol {...props} className="list-decimal pl-6 mb-3" />,
+        li: ({ node, ...props }) => <li {...props} className="mb-1" />,
+        h1: ({ node, ...props }) => <h1 {...props} className="text-xl font-semibold mt-4 mb-2" />,
+        h2: ({ node, ...props }) => <h2 {...props} className="text-lg font-semibold mt-4 mb-2" />,
+        h3: ({ node, ...props }) => <h3 {...props} className="text-base font-semibold mt-3 mb-2" />,
+        table: ({ node, ...props }) => (
+          <div className="overflow-x-auto mb-4">
+            <table {...props} className="w-full border border-white/20 text-sm" />
+          </div>
+        ),
+        th: ({ node, ...props }) => (
+          <th {...props} className="border border-white/20 px-2 py-1 text-left font-semibold" />
+        ),
+        td: ({ node, ...props }) => <td {...props} className="border border-white/10 px-2 py-1 align-top" />,
+        blockquote: ({ node, ...props }) => (
+          <blockquote
+            {...props}
+            className="border-l-4 border-blue-500/70 pl-4 italic text-white/80 mb-4"
+          />
+        ),
+        code: ({ inline, className, children, ...props }) => (
+          inline ? (
+            <code
+              {...props}
+              className={`rounded bg-white/10 px-1 py-0.5 text-xs ${className ?? ""}`}
+            >
+              {children}
+            </code>
+          ) : (
+            <pre className="rounded-lg bg-black/50 p-3 text-xs overflow-x-auto mb-4">
+              <code {...props} className={className}>
+                {children}
+              </code>
+            </pre>
+          )
+        ),
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
+
   return (
     <div className="grid h-full w-full grid-rows-[auto,1fr,auto] bg-neutral-900">
       {/* Chat Header */}
@@ -817,7 +870,7 @@ const ChatInterface = () => {
                 {message.sender === "user" ? (
                   <div className="flex justify-end">
                     <div className="max-w-[70%] bg-blue-600 text-white rounded-2xl px-4 py-3">
-                      <p className="whitespace-pre-wrap">{message.content}</p>
+                      {renderMarkdown(message.content, "user")}
                     </div>
                   </div>
                 ) : (
@@ -834,7 +887,7 @@ const ChatInterface = () => {
                         message.isError ? "bg-red-900/40 text-red-100" : "bg-neutral-800 text-white"
                       }`}
                     >
-                      <p className="whitespace-pre-wrap">{message.content}</p>
+                      {renderMarkdown(message.content, "assistant")}
                       {message.citations?.length ? (
                         <div className="mt-3 space-y-2 border-t border-white/10 pt-2">
                           <p className="text-xs font-semibold tracking-wide text-white/70">Sources</p>
