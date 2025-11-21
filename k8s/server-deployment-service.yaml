@@ -1,0 +1,168 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server-deployment
+  labels:
+    app: server
+    component: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: server
+  template:
+    metadata:
+      labels:
+        app: server
+        component: backend
+    spec:
+      containers:
+        - name: server
+          image: sydai/backend:kind
+          imagePullPolicy: Never
+          env:
+            # Server Configuration
+            - name: PORT
+              value: "3000"
+            - name: CLIENT_ORIGIN
+              value: "http://localhost:8081"
+            - name: CALLBACK_BASE_URL
+              value: "http://localhost:8081"
+            - name: SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: sydai-secrets
+                  key: SESSION_SECRET
+            - name: ACCESS_TOKEN_TTL_MS
+              value: "3600000"
+            
+            # Database Configuration
+            - name: MONGODB_URI
+              value: "mongodb://database-service:27017/sydai"
+            - name: DATABASE_SERVICE_URL
+              value: "http://database-service:4000"
+            
+            # OAuth Configuration - Google
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: sydai-secrets
+                  key: GOOGLE_CLIENT_ID
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: sydai-secrets
+                  key: GOOGLE_CLIENT_SECRET
+            
+            # OAuth Configuration - GitHub
+            - name: GITHUB_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: sydai-secrets
+                  key: GITHUB_CLIENT_ID
+            - name: GITHUB_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: sydai-secrets
+                  key: GITHUB_CLIENT_SECRET
+            
+            # AI Services Configuration
+            - name: GROQ_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sydai-secrets
+                  key: GROQ_API_KEY
+            - name: GOOGLE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sydai-secrets
+                  key: GOOGLE_API_KEY
+            
+            # Qdrant Configuration
+            - name: QDRANT_URL
+              valueFrom:
+                secretKeyRef:
+                  name: sydai-secrets
+                  key: QDRANT_URL
+            - name: QDRANT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sydai-secrets
+                  key: QDRANT_API_KEY
+            - name: QDRANT_CLUSTER_ID
+              value: "c4b08b3a-a89a-4ccf-954c-cf1520bf0022"
+            - name: QDRANT_COLLECTION
+              value: "SYD-ai"
+            - name: QDRANT_HOST
+              value: "localhost"
+            - name: QDRANT_PORT
+              value: "6333"
+            - name: EMBEDDING_DIM
+              value: "1024"
+            
+            # Service URLs
+            - name: OLLAMA_BASE_URL
+              value: "http://localhost:11434"
+            - name: EMBEDDING_SERVICE_URL
+              value: "http://embedding-worker-service:8001"
+            
+            # Node Environment
+            - name: NODE_ENV
+              value: "production"
+          
+          ports:
+            - containerPort: 3000
+              name: http
+              protocol: TCP
+          
+          # Health checks
+          # readinessProbe:
+          #   httpGet:
+          #     path: /health
+          #     port: 3000
+          #   initialDelaySeconds: 10
+          #   periodSeconds: 10
+          #   timeoutSeconds: 5
+          #   successThreshold: 1
+          #   failureThreshold: 3
+          
+          # livenessProbe:
+          #   httpGet:
+          #     path: /health
+          #     port: 3000
+          #   initialDelaySeconds: 30
+          #   periodSeconds: 20
+          #   timeoutSeconds: 5
+          #   successThreshold: 1
+          #   failureThreshold: 3
+          
+          # Resource limits
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+      
+      # Restart policy
+      restartPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: server-service
+  labels:
+    app: server
+    component: backend
+spec:
+  type: ClusterIP
+  selector:
+    app: server
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+  sessionAffinity: None

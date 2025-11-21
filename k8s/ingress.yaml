@@ -16,25 +16,32 @@ spec:
               service:
                 name: frontend-service
                 port:
-                  number: 80
+                  number: 8081
           - path: /auth
             pathType: Prefix
             backend:
               service:
-                name: backend-service
+                name: server-service
                 port:
                   number: 3000
           - path: /ai
             pathType: Prefix
             backend:
               service:
-                name: backend-service
+                name: server-service
                 port:
                   number: 3000
           - path: /status
             pathType: Prefix
             backend:
               service:
-                name: backend-service
+                name: server-service
+                port:
+                  number: 3000
+          - path: /health
+            pathType: Prefix
+            backend:
+              service:
+                name: server-service
                 port:
                   number: 3000

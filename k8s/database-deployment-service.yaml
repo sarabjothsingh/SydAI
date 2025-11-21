@@ -1,0 +1,133 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: database-pvc
+  labels:
+    app: database
+    component: database
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: database-statefulset
+  labels:
+    app: database
+    component: database
+spec:
+  serviceName: database-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: database
+  template:
+    metadata:
+      labels:
+        app: database
+        component: database
+    spec:
+      containers:
+        - name: database
+          image: sydai/database:kind
+          imagePullPolicy: Never
+          env:
+            # Database Configuration
+            - name: PORT
+              value: "4000"
+            - name: MONGODB_URI
+              value: "mongodb://mongodb-service:27017/sydai"
+            - name: NODE_ENV
+              value: "production"
+            
+            # Qdrant Configuration
+            - name: QDRANT_URL
+              valueFrom:
+                secretKeyRef:
+                  name: sydai-secrets
+                  key: QDRANT_URL
+            - name: QDRANT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sydai-secrets
+                  key: QDRANT_API_KEY
+            - name: QDRANT_COLLECTION
+              value: "SYD-ai"
+            - name: EMBEDDING_DIM
+              value: "1024"
+          
+          ports:
+            - containerPort: 4000
+              name: http
+              protocol: TCP
+          
+          # Volume mount for persistent data
+          volumeMounts:
+            - name: database-storage
+              mountPath: /app/data
+          
+          # Health checks
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 4000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 4000
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          
+          # Resource limits
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      
+      restartPolicy: Always
+  
+  # Volume claim templates for persistent storage
+  volumeClaimTemplates:
+    - metadata:
+        name: database-storage
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 5Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: database-service
+  labels:
+    app: database
+    component: database
+spec:
+  type: ClusterIP
+  clusterIP: None  # Headless service for StatefulSet
+  selector:
+    app: database
+  ports:
+    - name: http
+      port: 4000
+      targetPort: 4000
+      protocol: TCP
