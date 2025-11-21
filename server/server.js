@@ -30,6 +30,7 @@ app.use(cookieParser());
 
 // CORS for Vite dev server
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:8081";
+const CALLBACK_BASE_URL = process.env.CALLBACK_BASE_URL || CLIENT_ORIGIN;
 app.use(
   cors({
     origin: CLIENT_ORIGIN,
@@ -48,12 +49,13 @@ app.use(
   session({
     secret: process.env.SESSION_SECRET || "secret",
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
     cookie: {
       httpOnly: true,
       secure: false, // set true in production when using HTTPS
       sameSite: "lax",
-      maxAge: 1000 * 60 * 60 * 24, // 1 day
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+      path: "/"
     },
   })
 );
@@ -68,7 +70,7 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "http://localhost:3000/auth/google/callback",
+      callbackURL: `${CALLBACK_BASE_URL}/auth/google/callback`,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -126,7 +128,7 @@ passport.use(
     {
       clientID: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
-      callbackURL: "http://localhost:3000/auth/github/callback",
+      callbackURL: `${CALLBACK_BASE_URL}/auth/github/callback`,
       scope: ["user:email"],
     },
     async (accessToken, refreshToken, profile, done) => {
@@ -332,7 +334,8 @@ function setAuthCookie(res, token) {
     httpOnly: true,
     secure: false, // set true in production with HTTPS
     sameSite: "lax",
-    maxAge: 1000 * 60 * 60 * 24, // 1 day
+    maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+    path: "/"
   });
 }
 
