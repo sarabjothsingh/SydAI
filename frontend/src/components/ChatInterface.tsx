@@ -583,7 +583,7 @@ const buildAssistantMessage = (content: string, citations?: Citation[], isError 
 
 const parseCitations = (matches: any[] = []): Citation[] =>
   matches
-    .map((match, index) => {
+      .map((match, index) => {
       const payload = match?.payload ?? {};
       const metadata = payload.metadata ?? {};
       const pageNumber = metadata.page_number ?? metadata.pageNumber;
@@ -593,7 +593,7 @@ const parseCitations = (matches: any[] = []): Citation[] =>
         pageNumber: typeof pageNumber === "number" ? pageNumber : Number(pageNumber) || undefined,
         score: typeof match?.score === "number" ? match.score : undefined,
         snippet: truncate(payload.text ?? ""),
-      } satisfies Citation;
+      } as Citation;
     })
     .filter((citation) => Boolean(citation.filename || citation.snippet));
 
@@ -618,11 +618,8 @@ const ChatInterface = () => {
   const { sidebarRequest, setSidebarRequest, selectedModel, setSelectedModel } = useChatContext();
   const selectedModelRef = useRef<string | null>(null);
 
-  const API_BASE =
-    (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:3000";
-
   const handleLogout = () => {
-    window.location.href = `${API_BASE}/logout`;
+    window.location.href = `/logout`;
   };
 
   useEffect(() => {
@@ -772,7 +769,7 @@ const ChatInterface = () => {
             className="border-l-4 border-blue-500/70 pl-4 italic text-white/80 mb-4"
           />
         ),
-        code: ({ inline, className, children, ...props }) => (
+        code: ({ inline, className, children, ...props }: { inline?: boolean; className?: string; children?: React.ReactNode } & Record<string, any>) => (
           inline ? (
             <code
               {...props}

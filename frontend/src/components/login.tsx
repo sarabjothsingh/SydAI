@@ -315,15 +315,11 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleSignup = () => {
-    window.location.href = `${
-      import.meta.env.VITE_API_BASE_URL || "http://localhost:3000"
-    }/auth/google`;
+    window.location.href = `/auth/google`;
   };
 
   const handleGithubSignup = () => {
-    window.location.href = `${
-      import.meta.env.VITE_API_BASE_URL || "http://localhost:3000"
-    }/auth/github`;
+    window.location.href = `/auth/github`;
   };
 
   return (

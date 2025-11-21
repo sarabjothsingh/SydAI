@@ -13,15 +13,13 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:3000";
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchStatus = async () => {
     try {
-      const res = await fetch(`${API_BASE}/status`, { credentials: "include" });
+      const res = await fetch(`/status`, { credentials: "include" });
       if (res.status === 401) {
         setUser(null);
       } else {
