@@ -76,8 +76,8 @@ function buildConfig() {
 
   const groqApiKey = getEnvVar("GROQ_API_KEY");
   const googleApiKey = getEnvVar("GOOGLE_API_KEY");
-  const embeddingServiceUrl = getEnvVar("EMBEDDING_SERVICE_URL", { fallback: "http://localhost:8001" });
-  const databaseServiceUrl = getEnvVar("DATABASE_SERVICE_URL", { fallback: "http://localhost:4000" });
+  const embeddingServiceUrl = getEnvVar("EMBEDDING_SERVICE_URL", { fallback: "http://127.0.0.1:8001" });
+  const databaseServiceUrl = getEnvVar("DATABASE_SERVICE_URL", { fallback: "http://127.0.0.1:4000" });
 
   const modelRegistry = loadModelRegistry();
 

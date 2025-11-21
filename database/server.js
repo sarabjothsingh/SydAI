@@ -392,4 +392,4 @@ app.post("/sessions/logout-by-token", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`🚀 [DB] CRUD service listening on http://localhost:${PORT}`));
+app.listen(PORT, "0.0.0.0", () => console.log(`🚀 [DB] CRUD service listening on http://127.0.0.1:${PORT}`));
