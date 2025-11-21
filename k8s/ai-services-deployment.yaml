@@ -1,21 +1,50 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ai-services-deployment
+  name: embedding-worker-deployment
   labels:
-    app: ai-services
+    app: embedding-worker
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: ai-services
+      app: embedding-worker
   template:
     metadata:
       labels:
-        app: ai-services
+        app: embedding-worker
     spec:
       containers:
-        - name: ai-service
-          image: sydai/ai_services:latest
+        - name: embedding-worker
+          image: sydai/embedding-worker:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: HOST
+              value: "0.0.0.0"
+            - name: PORT
+              value: "8001"
+            - name: EMBEDDING_MODEL
+              value: "BAAI/bge-m3"
+            - name: EMBEDDING_USE_FP16
+              value: "true"
           ports:
-            - containerPort: 8000
+            - containerPort: 8001
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8001
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8001
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi

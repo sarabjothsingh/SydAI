@@ -1,13 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: mongodb-service
+  name: database-service
   labels:
     app: database
 spec:
-  clusterIP: None
+  type: ClusterIP
   selector:
     app: database
   ports:
-    - port: 27017
-      targetPort: 27017
+    - name: http
+      port: 4000
+      targetPort: 4000

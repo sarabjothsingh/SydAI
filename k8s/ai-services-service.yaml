@@ -1,13 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: ai-services-service
+  name: embedding-worker-service
   labels:
-    app: ai-services
+    app: embedding-worker
 spec:
   type: ClusterIP
   selector:
-    app: ai-services
+    app: embedding-worker
   ports:
-    - port: 8000
-      targetPort: 8000
+    - name: http
+      port: 8001
+      targetPort: 8001
