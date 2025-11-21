@@ -92,7 +92,7 @@ async function callAnthropic(modelConfig, messages, options = {}) {
     .map((msg) => {
       // Anthropic only supports 'user' and 'assistant' roles
       if (msg.role !== "user" && msg.role !== "assistant") {
-        throw new Error(`Unsupported message role for Anthropic: ${msg.role}`);
+        throw new Error(`Only 'user' and 'assistant' roles are supported for Anthropic, got: ${msg.role}`);
       }
       return {
         role: msg.role,
