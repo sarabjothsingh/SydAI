@@ -49,7 +49,7 @@ Main deployment script that builds Docker images and deploys to Kubernetes.
 
 **What it does:**
 1. Checks for uncommitted changes (can be skipped with --force)
-2. Builds Docker images for backend, frontend, and database
+2. Builds Docker images for backend, frontend, and database using a helper function
 3. Deploys to Kubernetes cluster using kubectl
 
 **Prerequisites:**
@@ -66,6 +66,32 @@ Main deployment script that builds Docker images and deploys to Kubernetes.
 ./scripts/deploy.sh --force
 ```
 
+### install-all.sh
+
+Installs npm dependencies for all services in the repository.
+
+**Usage:**
+```bash
+./scripts/install-all.sh
+```
+
+**What it does:**
+1. Checks for the existence of each service directory (frontend, server, database, ai_services)
+2. Verifies each directory has a package.json file
+3. Runs `npm install` in each service directory
+4. Provides clear feedback for each service
+
+**Examples:**
+```bash
+# Install all dependencies
+./scripts/install-all.sh
+```
+
+**Features:**
+- Gracefully handles missing directories
+- Continues even if one service fails to install
+- Provides clear status messages for each service
+
 ## NPM Scripts
 
 You can also use npm scripts from the root package.json:
@@ -77,11 +103,20 @@ npm run check-uncommitted
 # Check with force (always succeeds)
 npm run check-uncommitted:force
 
-# Run predeploy checks
+# Run deployment (includes pre-check)
+npm run deploy
+
+# Force deployment (skips uncommitted changes check)
+npm run deploy:force
+
+# Run predeploy checks manually
 npm run predeploy
 
-# Build all services
+# Build all services (includes pre-check)
 npm run build:all
+
+# Build only frontend
+npm run build:frontend
 
 # Install all dependencies
 npm run install:all

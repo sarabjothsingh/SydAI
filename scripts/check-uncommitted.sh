@@ -8,8 +8,8 @@ set -e
 FORCE_PROCEED=false
 
 # Parse arguments
-for arg in "$@"; do
-    case $arg in
+while [[ $# -gt 0 ]]; do
+    case $1 in
         --force|-f)
             FORCE_PROCEED=true
             shift
@@ -23,6 +23,11 @@ for arg in "$@"; do
             echo "  --force, -f    Proceed even if uncommitted changes are detected"
             echo "  --help, -h     Show this help message"
             exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use --help for usage information"
+            exit 1
             ;;
     esac
 done

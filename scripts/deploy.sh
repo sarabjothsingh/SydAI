@@ -21,14 +21,24 @@ fi
 
 echo ""
 echo "📦 Building Docker images..."
-echo "Building backend..."
-docker build -t sydai/backend:latest "$REPO_ROOT/server" || { echo "Backend build failed"; exit 1; }
 
-echo "Building frontend..."
-docker build -t sydai/frontend:latest "$REPO_ROOT/frontend" || { echo "Frontend build failed"; exit 1; }
+# Function to build a Docker image
+build_image() {
+    local service_name=$1
+    local service_path=$2
+    local image_tag=$3
+    
+    echo "Building $service_name..."
+    if ! docker build -t "$image_tag" "$service_path"; then
+        echo "❌ $service_name build failed"
+        exit 1
+    fi
+    echo "✅ $service_name built successfully"
+}
 
-echo "Building database..."
-docker build -t sydai/database:latest "$REPO_ROOT/database" || { echo "Database build failed"; exit 1; }
+build_image "backend" "$REPO_ROOT/server" "sydai/backend:latest"
+build_image "frontend" "$REPO_ROOT/frontend" "sydai/frontend:latest"
+build_image "database" "$REPO_ROOT/database" "sydai/database:latest"
 
 echo ""
 echo "☸️  Deploying to Kubernetes..."

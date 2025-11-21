@@ -12,8 +12,8 @@
     "prebuild:all": "npm run check-uncommitted",
     "build:all": "npm run build:frontend && npm run build:server",
     "build:frontend": "test -d frontend && cd frontend && npm run build || echo 'Frontend directory not found, skipping'",
-    "build:server": "echo 'Server is Node.js - no build needed'",
-    "install:all": "for dir in frontend server database ai_services; do [ -d \"$dir\" ] && [ -f \"$dir/package.json\" ] && (cd \"$dir\" && npm install) || echo \"Skipping $dir\"; done"
+    "build:server": "test -d server || echo 'Server directory not found'",
+    "install:all": "bash scripts/install-all.sh"
   },
   "keywords": [
     "ai",
