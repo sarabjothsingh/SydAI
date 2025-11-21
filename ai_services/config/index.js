@@ -76,7 +76,6 @@ function buildConfig() {
 
   const groqApiKey = getEnvVar("GROQ_API_KEY");
   const googleApiKey = getEnvVar("GOOGLE_API_KEY");
-  const ollamaBaseUrl = getEnvVar("OLLAMA_BASE_URL", { fallback: "http://localhost:11434" });
   const embeddingServiceUrl = getEnvVar("EMBEDDING_SERVICE_URL", { fallback: "http://localhost:8001" });
   const databaseServiceUrl = getEnvVar("DATABASE_SERVICE_URL", { fallback: "http://localhost:4000" });
 
@@ -87,7 +86,6 @@ function buildConfig() {
     env: {
       groqApiKey,
       googleApiKey,
-      ollamaBaseUrl,
       embeddingServiceUrl,
       databaseServiceUrl,
     },

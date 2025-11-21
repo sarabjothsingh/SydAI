@@ -33,19 +33,6 @@ function getGoogleModel(apiKey, modelId) {
   return googleClient.getGenerativeModel({ model: modelId });
 }
 
-function createOllamaRequestBody(modelId, messages, options = {}) {
-  return {
-    model: modelId,
-    messages,
-    options: {
-      temperature: options.temperature ?? 0.1,
-      repeat_penalty: options.repeatPenalty ?? 1,
-      top_p: options.topP ?? 0.95,
-    },
-    stream: false,
-  };
-}
-
 async function callGroq(modelConfig, messages, options = {}) {
   const {
     env: { groqApiKey },
@@ -80,27 +67,6 @@ async function callGoogle(modelConfig, messages, options = {}) {
   return response.response?.text() ?? "";
 }
 
-async function callOllama(modelConfig, messages, options = {}) {
-  const {
-    env: { ollamaBaseUrl },
-  } = getConfig();
-
-  const response = await fetch(`${ollamaBaseUrl.replace(/\/$/, "")}/api/chat`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(createOllamaRequestBody(modelConfig.id, normalizeMessages(messages), options)),
-  });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Ollama request failed: ${response.status} ${errText}`);
-  }
-
-  const payload = await response.json();
-  const lastMessage = payload.message || payload.messages?.slice(-1)[0];
-  return lastMessage?.content ?? "";
-}
-
 const { findModel } = require("./modelRegistry");
 
 async function generate(modelIdentifier, messages, options = {}) {
@@ -114,8 +80,6 @@ async function generate(modelIdentifier, messages, options = {}) {
       return callGroq(model, messages, options);
     case "google_genai":
       return callGoogle(model, messages, options);
-    case "ollama":
-      return callOllama(model, messages, options);
     default:
       throw new Error(`Unsupported model type: ${model.type}`);
   }

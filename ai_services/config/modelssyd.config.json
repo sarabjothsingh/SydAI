@@ -7,18 +7,11 @@
     "summary_overlap_tokens": 600
   },
   {
-    "display_name": "Gemini 1.5 Flash",
-    "type": "google_genai",
-    "id": "gemini-1.5-flash",
-    "summary_token_limit": 60000,
-    "summary_overlap_tokens": 2000
-  },
-  {
-    "display_name": "Phi-3 (Ollama)",
-    "type": "ollama",
-    "id": "phi3:mini",
-    "summary_token_limit": 4000,
-    "summary_overlap_tokens": 400
+    "display_name": "Groq - Llama 4 Maverick 17B",
+    "type": "groq",
+    "id": "meta-llama/llama-4-maverick-17b-128e-instruct",
+    "summary_token_limit": 8000,
+    "summary_overlap_tokens": 600
   },
   {
     "display_name": "Groq - GPT-OSS 120B",
