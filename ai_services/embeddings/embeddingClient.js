@@ -10,7 +10,14 @@ async function embedTexts(texts) {
     env: { embeddingServiceUrl },
   } = getConfig();
 
-  const url = `${embeddingServiceUrl.replace(/\/$/, "")}/embeddings`;
+  if (!embeddingServiceUrl) {
+    throw new Error("Missing embeddingServiceUrl in configuration");
+  }
+
+  // Normalize 'localhost' to IPv4 `127.0.0.1` to avoid connecting to IPv6 ::1
+  // which can cause `ECONNREFUSED ::1:8001` when the worker is bound to IPv4 only.
+  const normalizedServiceUrl = embeddingServiceUrl.replace(/localhost\b/, "127.0.0.1");
+  const url = `${normalizedServiceUrl.replace(/\/$/, "")}/embeddings`;
 
   const response = await fetch(url, {
     method: "POST",
@@ -38,7 +45,10 @@ async function healthCheck() {
     env: { embeddingServiceUrl },
   } = getConfig();
 
-  const url = `${embeddingServiceUrl.replace(/\/$/, "")}/healthz`;
+  if (!embeddingServiceUrl) return false;
+
+  const normalizedServiceUrl = embeddingServiceUrl.replace(/localhost\b/, "127.0.0.1");
+  const url = `${normalizedServiceUrl.replace(/\/$/, "")}/healthz`;
   const response = await fetch(url).catch(() => null);
   return Boolean(response && response.ok);
 }
