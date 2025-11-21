@@ -1,0 +1,25 @@
+{
+  "name": "sydai",
+  "version": "1.0.0",
+  "description": "SydAI - AI-powered application with authentication and services",
+  "private": true,
+  "scripts": {
+    "check-uncommitted": "bash scripts/check-uncommitted.sh",
+    "check-uncommitted:force": "bash scripts/check-uncommitted.sh --force",
+    "predeploy": "npm run check-uncommitted",
+    "deploy": "echo 'Deploy command - add your deployment logic here'",
+    "prebuild:all": "npm run check-uncommitted",
+    "build:all": "npm run build:frontend && npm run build:server",
+    "build:frontend": "cd frontend && npm run build",
+    "build:server": "echo 'Server is Node.js - no build needed'",
+    "install:all": "npm install && cd frontend && npm install && cd ../server && npm install && cd ../database && npm install && cd ../ai_services && npm install"
+  },
+  "keywords": [
+    "ai",
+    "authentication",
+    "kubernetes",
+    "deployment"
+  ],
+  "author": "",
+  "license": "ISC"
+}
