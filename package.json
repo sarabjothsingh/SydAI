@@ -7,12 +7,13 @@
     "check-uncommitted": "bash scripts/check-uncommitted.sh",
     "check-uncommitted:force": "bash scripts/check-uncommitted.sh --force",
     "predeploy": "npm run check-uncommitted",
-    "deploy": "echo 'Deploy command - add your deployment logic here'",
+    "deploy": "bash scripts/deploy.sh",
+    "deploy:force": "bash scripts/deploy.sh --force",
     "prebuild:all": "npm run check-uncommitted",
     "build:all": "npm run build:frontend && npm run build:server",
-    "build:frontend": "cd frontend && npm run build",
+    "build:frontend": "test -d frontend && cd frontend && npm run build || echo 'Frontend directory not found, skipping'",
     "build:server": "echo 'Server is Node.js - no build needed'",
-    "install:all": "npm install && cd frontend && npm install && cd ../server && npm install && cd ../database && npm install && cd ../ai_services && npm install"
+    "install:all": "for dir in frontend server database ai_services; do [ -d \"$dir\" ] && [ -f \"$dir/package.json\" ] && (cd \"$dir\" && npm install) || echo \"Skipping $dir\"; done"
   },
   "keywords": [
     "ai",
