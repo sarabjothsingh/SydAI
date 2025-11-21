@@ -89,10 +89,16 @@ async function callAnthropic(modelConfig, messages, options = {}) {
   const systemMessage = messages.find((msg) => msg.role === "system");
   const conversationMessages = messages
     .filter((msg) => msg.role !== "system")
-    .map((msg) => ({
-      role: msg.role === "assistant" ? "assistant" : "user",
-      content: String(msg.content ?? ""),
-    }));
+    .map((msg) => {
+      // Anthropic only supports 'user' and 'assistant' roles
+      if (msg.role !== "user" && msg.role !== "assistant") {
+        throw new Error(`Unsupported message role for Anthropic: ${msg.role}`);
+      }
+      return {
+        role: msg.role,
+        content: String(msg.content ?? ""),
+      };
+    });
 
   const response = await client.messages.create({
     model: modelConfig.id,
