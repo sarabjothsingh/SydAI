@@ -619,7 +619,7 @@ const ChatInterface = () => {
   const selectedModelRef = useRef<string | null>(null);
 
   const API_BASE =
-    (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:3000";
+    (import.meta as any).env?.VITE_API_BASE_URL || "http://127.0.0.1:3000";
 
   const handleLogout = () => {
     window.location.href = `${API_BASE}/logout`;

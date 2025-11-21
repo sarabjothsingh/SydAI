@@ -29,7 +29,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 // CORS for Vite dev server
-const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:8081";
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://127.0.0.1:8081";
 app.use(
   cors({
     origin: CLIENT_ORIGIN,
@@ -41,7 +41,7 @@ app.use(
 const EXPIRES_IN_MS = Number(process.env.ACCESS_TOKEN_TTL_MS || 1000 * 60 * 60);
 
 // Database service URL (standalone service)
-const DATABASE_SERVICE_URL = process.env.DATABASE_SERVICE_URL || "http://localhost:4000";
+const DATABASE_SERVICE_URL = process.env.DATABASE_SERVICE_URL || "http://127.0.0.1:4000";
 
 // Session middleware
 app.use(
@@ -68,7 +68,7 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "http://localhost:3000/auth/google/callback",
+      callbackURL: "http://127.0.0.1:3000/auth/google/callback",
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -126,7 +126,7 @@ passport.use(
     {
       clientID: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
-      callbackURL: "http://localhost:3000/auth/github/callback",
+      callbackURL: "http://127.0.0.1:3000/auth/github/callback",
       scope: ["user:email"],
     },
     async (accessToken, refreshToken, profile, done) => {
@@ -321,8 +321,8 @@ app.get("/logout", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running at http://localhost:${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Server is running at http://127.0.0.1:${PORT}`);
 });
 
 // Helper to set HttpOnly access token cookie

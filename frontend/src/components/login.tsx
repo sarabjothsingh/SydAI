@@ -316,13 +316,13 @@ const LoginPage = () => {
 
   const handleGoogleSignup = () => {
     window.location.href = `${
-      import.meta.env.VITE_API_BASE_URL || "http://localhost:3000"
+      import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:3000"
     }/auth/google`;
   };
 
   const handleGithubSignup = () => {
     window.location.href = `${
-      import.meta.env.VITE_API_BASE_URL || "http://localhost:3000"
+      import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:3000"
     }/auth/github`;
   };
 

@@ -38,7 +38,7 @@ function createClient() {
 
   const url = process.env.QDRANT_URL;
   const apiKey = process.env.QDRANT_API_KEY;
-  const host = process.env.QDRANT_HOST || "localhost";
+  const host = process.env.QDRANT_HOST || "127.0.0.1";
   const port = Number(process.env.QDRANT_PORT || 6333);
 
   try {
@@ -98,7 +98,7 @@ async function ensureCollectionExists(collectionName, vectorSize) {
     console.error('[QDRANT] ensureCollectionExists failed', { collectionName, vectorSize, message: err.message, stack: err.stack });
 
     if (lowered.includes('fetch failed') || lowered.includes('econnrefused') || lowered.includes('enotfound') || lowered.includes('getaddrinfo')) {
-      const host = process.env.QDRANT_HOST || 'localhost';
+      const host = process.env.QDRANT_HOST || '127.0.0.1';
       const port = process.env.QDRANT_PORT || '6333';
       const hint = `Qdrant appears unreachable at ${host}:${port}. If you're using Docker Compose, start the service: 'docker-compose up -d qdrant database-service' (from the project root). If running locally, ensure Qdrant is running and accessible at http://${host}:${port}.`;
       const err2 = new Error(`${err.message || 'Qdrant connection error'} — ${hint}`);
