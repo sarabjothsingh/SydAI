@@ -14,6 +14,13 @@
     "summary_overlap_tokens": 600
   },
   {
+    "display_name": "Groq - Llama3.1 8B Instant",
+    "type": "groq",
+    "id": "llama-3.1-8b-instant",
+    "summary_token_limit": 8000,
+    "summary_overlap_tokens": 600
+  },
+  {
     "display_name": "Groq - GPT-OSS 120B",
     "type": "groq",
     "id": "openai/gpt-oss-120b",
