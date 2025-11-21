@@ -1,5 +1,3 @@
-const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:3000";
-
 export type ModelConfig = {
   display_name: string;
   type: string;
@@ -28,7 +26,7 @@ async function handleJsonResponse<T>(response: Response): Promise<T> {
 }
 
 export async function fetchModels(): Promise<ModelConfig[]> {
-  const response = await fetch(`${API_BASE}/ai/models`, {
+  const response = await fetch(`/ai/models`, {
     credentials: "include",
   });
   const payload = await handleJsonResponse<{ models: ModelConfig[] }>(response);
@@ -40,7 +38,7 @@ export async function ingestDocuments(files: File[]): Promise<{ ok: boolean; ing
   const formData = new FormData();
   files.forEach((file) => formData.append("files", file, file.name));
 
-  const response = await fetch(`${API_BASE}/ai/ingest`, {
+  const response = await fetch(`/ai/ingest`, {
     method: "POST",
     body: formData,
     credentials: "include",
@@ -51,7 +49,7 @@ export async function ingestDocuments(files: File[]): Promise<{ ok: boolean; ing
 
 export async function queryAI(question: string, modelId: string): Promise<{ answer: string; matches: any[] }>
 {
-  const response = await fetch(`${API_BASE}/ai/query`, {
+  const response = await fetch(`/ai/query`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -64,7 +62,7 @@ export async function queryAI(question: string, modelId: string): Promise<{ answ
 }
 
 export async function fetchDocuments(): Promise<StoredDocument[]> {
-  const response = await fetch(`${API_BASE}/ai/documents`, {
+  const response = await fetch(`/ai/documents`, {
     credentials: "include",
   });
   const payload = await handleJsonResponse<{ documents: StoredDocument[] }>(response);
@@ -72,7 +70,7 @@ export async function fetchDocuments(): Promise<StoredDocument[]> {
 }
 
 export async function deleteDocument(documentId: string): Promise<void> {
-  const response = await fetch(`${API_BASE}/ai/documents/${documentId}`, {
+  const response = await fetch(`/ai/documents/${documentId}`, {
     method: "DELETE",
     credentials: "include",
   });
@@ -81,7 +79,7 @@ export async function deleteDocument(documentId: string): Promise<void> {
 
 export async function summarizeDocuments(modelId: string, filenames: string[]): Promise<{ summary: string }>
 {
-  const response = await fetch(`${API_BASE}/ai/summarize`, {
+  const response = await fetch(`/ai/summarize`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -94,7 +92,7 @@ export async function summarizeDocuments(modelId: string, filenames: string[]): 
 }
 
 export async function checkAiHealth(): Promise<any> {
-  const response = await fetch(`${API_BASE}/ai/health`, {
+  const response = await fetch(`/ai/health`, {
     credentials: "include",
   });
   return handleJsonResponse(response);
