@@ -83,6 +83,35 @@ app.get("/documents", async (req, res) => {
   }
 });
 
+// Get indexing status for user's documents
+app.get("/documents/status", async (req, res) => {
+  try {
+    const { userId } = req.query;
+    if (!userId) return res.status(400).json({ message: "userId is required" });
+
+    const documents = await Document.find({ userId }, { 
+      name: 1, 
+      status: 1, 
+      progress: 1, 
+      chunkCount: 1,
+      errorMessage: 1,
+      updatedAt: 1
+    }).sort({ updatedAt: -1 }).lean();
+    
+    const summary = {
+      total: documents.length,
+      indexed: documents.filter(d => d.status === "indexed").length,
+      indexing: documents.filter(d => d.status === "indexing").length,
+      pending: documents.filter(d => d.status === "pending").length,
+      error: documents.filter(d => d.status === "error").length,
+    };
+    
+    res.json({ documents, summary });
+  } catch (err) {
+    return sendError(res, err, "[DB] get status error:");
+  }
+});
+
 // Ingest document chunks into Qdrant and persist metadata
 app.post("/documents/ingest", async (req, res) => {
   try {
@@ -137,6 +166,7 @@ app.post("/documents/ingest", async (req, res) => {
           sizeBytes: Number(sizeBytes) || 0,
           chunkCount: chunkCount ?? chunks.length,
           status: "indexed",
+          progress: 100,
           errorMessage: null,
           metadata,
           lastProcessedAt: now,
