@@ -91,6 +91,8 @@ async function ingestDocuments({ userId, documents = [] }) {
       console.error(`[INGEST] Failed to process ${doc.filename}:`, errInfo);
       
       // Update document status to error so it doesn't remain in 'indexing' state
+      // NOTE: This could have a race condition if the same document is processed
+      // concurrently. For production, consider adding version fields or using a job queue.
       try {
         await updateDocumentStatus({
           userId,

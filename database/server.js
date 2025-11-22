@@ -109,10 +109,10 @@ app.get("/documents/status", async (req, res) => {
       else {
         // Handle unknown status values (data inconsistency or migration)
         console.warn(`[DB] Unknown document status: ${doc.status} for document ${doc.name}`);
-        acc.unknown = (acc.unknown || 0) + 1;
+        acc.unknown++;
       }
       return acc;
-    }, { total: 0, indexed: 0, indexing: 0, pending: 0, error: 0 });
+    }, { total: 0, indexed: 0, indexing: 0, pending: 0, error: 0, unknown: 0 });
     
     res.json({ documents, summary });
   } catch (err) {
@@ -247,11 +247,18 @@ app.post("/documents/update-status", async (req, res) => {
       updateFields.errorMessage = null;
     }
 
+    // Only update existing documents, don't create new ones
     const documentRecord = await Document.findOneAndUpdate(
       { userId, name: documentName },
       { $set: updateFields },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { new: true }
     ).lean();
+    
+    if (!documentRecord) {
+      return res.status(404).json({ 
+        message: `Document ${documentName} not found for user. Cannot update status of non-existent document.` 
+      });
+    }
 
     res.json({ ok: true, document: documentRecord });
   } catch (err) {
