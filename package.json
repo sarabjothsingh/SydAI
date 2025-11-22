@@ -12,7 +12,7 @@
     "prebuild:all": "npm run check-uncommitted",
     "build:all": "npm run build:frontend && npm run build:server",
     "build:frontend": "test -d frontend && cd frontend && npm run build || echo 'Frontend directory not found, skipping'",
-    "build:server": "test -d server || echo 'Server directory not found'",
+    "build:server": "test -d server && echo 'Server is plain Node.js, no build required' || echo 'Server directory not found'",
     "install:all": "bash scripts/install-all.sh"
   },
   "keywords": [
