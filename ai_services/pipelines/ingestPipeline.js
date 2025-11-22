@@ -3,7 +3,8 @@ const parsePdf = require("pdf-parse");
 const { v4: uuid } = require("uuid");
 const { embedTexts } = require("../embeddings/embeddingClient");
 const { chunkText } = require("../utils/chunks");
-const { ingestDocument } = require("../clients/databaseClient");
+const { ingestDocument, updateDocumentStatus } = require("../clients/databaseClient");
+const { DOCUMENT_STATUS } = require("../constants");
 
 async function ingestDocuments({ userId, documents = [] }) {
   if (!userId) {
@@ -88,6 +89,20 @@ async function ingestDocuments({ userId, documents = [] }) {
         stack: err.stack,
       };
       console.error(`[INGEST] Failed to process ${doc.filename}:`, errInfo);
+      
+      // Update document status to error so it doesn't remain in 'indexing' state
+      try {
+        await updateDocumentStatus({
+          userId,
+          documentName: doc.filename,
+          status: DOCUMENT_STATUS.ERROR,
+          errorMessage: err.message || "Failed to process document",
+        });
+        console.log(`[INGEST] Updated ${doc.filename} status to error`);
+      } catch (statusErr) {
+        console.error(`[INGEST] Failed to update error status for ${doc.filename}:`, statusErr);
+      }
+      
       // Continue processing other documents rather than fail-all
       continue;
     }

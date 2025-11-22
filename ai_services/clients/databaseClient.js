@@ -85,6 +85,15 @@ async function scrollVectors(payload) {
   return handleResponse(response);
 }
 
+async function updateDocumentStatus({ userId, documentName, status, errorMessage = null }) {
+  const response = await fetch(`${getBaseUrl()}/documents/update-status`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, documentName, status, errorMessage }),
+  });
+  return handleResponse(response);
+}
+
 module.exports = {
   ingestDocument,
   listDocuments,
@@ -92,4 +101,5 @@ module.exports = {
   deleteDocument,
   searchVectors,
   scrollVectors,
+  updateDocumentStatus,
 };

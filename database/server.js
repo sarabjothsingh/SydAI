@@ -106,6 +106,11 @@ app.get("/documents/status", async (req, res) => {
       else if (doc.status === DOCUMENT_STATUS.INDEXING) acc.indexing++;
       else if (doc.status === DOCUMENT_STATUS.PENDING) acc.pending++;
       else if (doc.status === DOCUMENT_STATUS.ERROR) acc.error++;
+      else {
+        // Handle unknown status values (data inconsistency or migration)
+        console.warn(`[DB] Unknown document status: ${doc.status} for document ${doc.name}`);
+        acc.unknown = (acc.unknown || 0) + 1;
+      }
       return acc;
     }, { total: 0, indexed: 0, indexing: 0, pending: 0, error: 0 });
     
@@ -207,6 +212,50 @@ app.delete("/documents/:id", async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     return sendError(res, err, "[DB] delete document error:");
+  }
+});
+
+// Update document status (for error handling)
+app.post("/documents/update-status", async (req, res) => {
+  try {
+    const { userId, documentName, status, errorMessage = null } = req.body || {};
+    
+    if (!userId || !documentName || !status) {
+      return res.status(400).json({ message: "userId, documentName, and status are required" });
+    }
+    
+    // Validate status value
+    const validStatuses = [DOCUMENT_STATUS.PENDING, DOCUMENT_STATUS.INDEXING, DOCUMENT_STATUS.INDEXED, DOCUMENT_STATUS.ERROR];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: `Invalid status: ${status}` });
+    }
+
+    const now = new Date();
+    const updateFields = {
+      status,
+      updatedAt: now,
+    };
+    
+    if (status === DOCUMENT_STATUS.ERROR && errorMessage) {
+      updateFields.errorMessage = errorMessage;
+      updateFields.progress = 0;
+    } else if (status === DOCUMENT_STATUS.INDEXED) {
+      updateFields.progress = 100;
+      updateFields.errorMessage = null;
+      updateFields.lastProcessedAt = now;
+    } else if (status === DOCUMENT_STATUS.INDEXING) {
+      updateFields.errorMessage = null;
+    }
+
+    const documentRecord = await Document.findOneAndUpdate(
+      { userId, name: documentName },
+      { $set: updateFields },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    ).lean();
+
+    res.json({ ok: true, document: documentRecord });
+  } catch (err) {
+    return sendError(res, err, "[DB] update status error:");
   }
 });
 

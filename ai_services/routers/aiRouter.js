@@ -126,6 +126,15 @@ module.exports = function createAiRouter({ express, multer }) {
         });
       }
       
+      // Check if any documents failed indexing
+      const errorDocs = relevantDocs.filter(doc => doc.status === DOCUMENT_STATUS.ERROR);
+      if (errorDocs.length > 0) {
+        return res.status(400).json({ 
+          message: "Some documents failed to index. Please re-upload them or remove them from the selection.",
+          failed: errorDocs.map(d => ({ name: d.name, error: d.errorMessage || "Unknown error" }))
+        });
+      }
+      
       // Check if there are any indexed documents to summarize
       const indexedDocs = relevantDocs.filter(doc => doc.status === DOCUMENT_STATUS.INDEXED);
       if (indexedDocs.length === 0) {
