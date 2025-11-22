@@ -166,6 +166,14 @@ try {
 4. For very large documents, consider splitting into smaller files
 5. Ensure embedding service has adequate resources (GPU recommended)
 
+## Security Considerations
+CodeQL analysis identified that the new endpoints (`/documents/status` and `/documents/update-status`) perform database access without rate limiting. This is consistent with existing endpoints in the codebase.
+
+**Recommendation for Production:**
+- Add rate limiting middleware (e.g., `express-rate-limit`) to all database endpoints
+- This affects both new and existing endpoints
+- Rate limiting was not added in this PR to maintain minimal changes and consistency with existing code
+
 ## Files Modified
 - `database/schemas/document.js` - Schema update
 - `database/server.js` - Status endpoint, optimizations
