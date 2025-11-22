@@ -7,6 +7,7 @@ const mongoose = require("mongoose");
 // Models
 const User = require("./schemas/user");
 const Document = require("./schemas/document");
+const { DOCUMENT_STATUS } = require("./constants");
 
 // Services
 const {
@@ -98,13 +99,15 @@ app.get("/documents/status", async (req, res) => {
       updatedAt: 1
     }).sort({ updatedAt: -1 }).lean();
     
-    const summary = {
-      total: documents.length,
-      indexed: documents.filter(d => d.status === "indexed").length,
-      indexing: documents.filter(d => d.status === "indexing").length,
-      pending: documents.filter(d => d.status === "pending").length,
-      error: documents.filter(d => d.status === "error").length,
-    };
+    // Optimize: calculate all status counts in a single pass
+    const summary = documents.reduce((acc, doc) => {
+      acc.total++;
+      if (doc.status === DOCUMENT_STATUS.INDEXED) acc.indexed++;
+      else if (doc.status === DOCUMENT_STATUS.INDEXING) acc.indexing++;
+      else if (doc.status === DOCUMENT_STATUS.PENDING) acc.pending++;
+      else if (doc.status === DOCUMENT_STATUS.ERROR) acc.error++;
+      return acc;
+    }, { total: 0, indexed: 0, indexing: 0, pending: 0, error: 0 });
     
     res.json({ documents, summary });
   } catch (err) {
@@ -165,7 +168,7 @@ app.post("/documents/ingest", async (req, res) => {
         $set: {
           sizeBytes: Number(sizeBytes) || 0,
           chunkCount: chunkCount ?? chunks.length,
-          status: "indexed",
+          status: DOCUMENT_STATUS.INDEXED,
           progress: 100,
           errorMessage: null,
           metadata,

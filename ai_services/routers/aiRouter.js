@@ -8,6 +8,7 @@ const {
   deleteDocument: deleteUserDocument,
 } = require("../clients/databaseClient");
 const { getConfig } = require("../config");
+const { DOCUMENT_STATUS } = require("../constants");
 
 module.exports = function createAiRouter({ express, multer }) {
   const upload = multer();
@@ -115,7 +116,9 @@ module.exports = function createAiRouter({ express, multer }) {
         : documents;
       
       // Check if any documents are still indexing
-      const indexingDocs = relevantDocs.filter(doc => doc.status === "indexing" || doc.status === "pending");
+      const indexingDocs = relevantDocs.filter(doc => 
+        doc.status === DOCUMENT_STATUS.INDEXING || doc.status === DOCUMENT_STATUS.PENDING
+      );
       if (indexingDocs.length > 0) {
         return res.status(400).json({ 
           message: "Some documents are still being indexed. Please wait for indexing to complete.",
@@ -124,7 +127,7 @@ module.exports = function createAiRouter({ express, multer }) {
       }
       
       // Check if there are any indexed documents to summarize
-      const indexedDocs = relevantDocs.filter(doc => doc.status === "indexed");
+      const indexedDocs = relevantDocs.filter(doc => doc.status === DOCUMENT_STATUS.INDEXED);
       if (indexedDocs.length === 0) {
         return res.status(400).json({ 
           message: "No indexed documents available for summarization. Please upload and index documents first."
