@@ -7,6 +7,7 @@ const mongoose = require("mongoose");
 // Models
 const User = require("./schemas/user");
 const Document = require("./schemas/document");
+const { DOCUMENT_STATUS } = require("./constants");
 
 // Services
 const {
@@ -83,6 +84,42 @@ app.get("/documents", async (req, res) => {
   }
 });
 
+// Get indexing status for user's documents
+app.get("/documents/status", async (req, res) => {
+  try {
+    const { userId } = req.query;
+    if (!userId) return res.status(400).json({ message: "userId is required" });
+
+    const documents = await Document.find({ userId }, { 
+      name: 1, 
+      status: 1, 
+      progress: 1, 
+      chunkCount: 1,
+      errorMessage: 1,
+      updatedAt: 1
+    }).sort({ updatedAt: -1 }).lean();
+    
+    // Optimize: calculate all status counts in a single pass
+    const summary = documents.reduce((acc, doc) => {
+      acc.total++;
+      if (doc.status === DOCUMENT_STATUS.INDEXED) acc.indexed++;
+      else if (doc.status === DOCUMENT_STATUS.INDEXING) acc.indexing++;
+      else if (doc.status === DOCUMENT_STATUS.PENDING) acc.pending++;
+      else if (doc.status === DOCUMENT_STATUS.ERROR) acc.error++;
+      else {
+        // Handle unknown status values (data inconsistency or migration)
+        console.warn(`[DB] Unknown document status: ${doc.status} for document ${doc.name}`);
+        acc.unknown++;
+      }
+      return acc;
+    }, { total: 0, indexed: 0, indexing: 0, pending: 0, error: 0, unknown: 0 });
+    
+    res.json({ documents, summary });
+  } catch (err) {
+    return sendError(res, err, "[DB] get status error:");
+  }
+});
+
 // Ingest document chunks into Qdrant and persist metadata
 app.post("/documents/ingest", async (req, res) => {
   try {
@@ -136,7 +173,8 @@ app.post("/documents/ingest", async (req, res) => {
         $set: {
           sizeBytes: Number(sizeBytes) || 0,
           chunkCount: chunkCount ?? chunks.length,
-          status: "indexed",
+          status: DOCUMENT_STATUS.INDEXED,
+          progress: 100,
           errorMessage: null,
           metadata,
           lastProcessedAt: now,
@@ -174,6 +212,57 @@ app.delete("/documents/:id", async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     return sendError(res, err, "[DB] delete document error:");
+  }
+});
+
+// Update document status (for error handling)
+app.post("/documents/update-status", async (req, res) => {
+  try {
+    const { userId, documentName, status, errorMessage = null } = req.body || {};
+    
+    if (!userId || !documentName || !status) {
+      return res.status(400).json({ message: "userId, documentName, and status are required" });
+    }
+    
+    // Validate status value
+    const validStatuses = [DOCUMENT_STATUS.PENDING, DOCUMENT_STATUS.INDEXING, DOCUMENT_STATUS.INDEXED, DOCUMENT_STATUS.ERROR];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: `Invalid status: ${status}` });
+    }
+
+    const now = new Date();
+    const updateFields = {
+      status,
+      updatedAt: now,
+    };
+    
+    if (status === DOCUMENT_STATUS.ERROR && errorMessage) {
+      updateFields.errorMessage = errorMessage;
+      updateFields.progress = 0;
+    } else if (status === DOCUMENT_STATUS.INDEXED) {
+      updateFields.progress = 100;
+      updateFields.errorMessage = null;
+      updateFields.lastProcessedAt = now;
+    } else if (status === DOCUMENT_STATUS.INDEXING) {
+      updateFields.errorMessage = null;
+    }
+
+    // Only update existing documents, don't create new ones
+    const documentRecord = await Document.findOneAndUpdate(
+      { userId, name: documentName },
+      { $set: updateFields },
+      { new: true }
+    ).lean();
+    
+    if (!documentRecord) {
+      return res.status(404).json({ 
+        message: `Document ${documentName} not found for user. Cannot update status of non-existent document.` 
+      });
+    }
+
+    res.json({ ok: true, document: documentRecord });
+  } catch (err) {
+    return sendError(res, err, "[DB] update status error:");
   }
 });
 

@@ -4,9 +4,11 @@ const { runRagQuery } = require("../pipelines/ragPipeline");
 const { summarizeDocuments } = require("../pipelines/summarizationPipeline");
 const {
   listDocuments: listUserDocuments,
+  getDocumentsStatus,
   deleteDocument: deleteUserDocument,
 } = require("../clients/databaseClient");
 const { getConfig } = require("../config");
+const { DOCUMENT_STATUS } = require("../constants");
 
 module.exports = function createAiRouter({ express, multer }) {
   const upload = multer();
@@ -25,6 +27,19 @@ module.exports = function createAiRouter({ express, multer }) {
       res.json({ documents: response?.documents || [] });
     } catch (error) {
       console.error("/documents error", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  router.get("/documents/status", async (req, res) => {
+    try {
+      const userId = req.user?._id;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+      const response = await getDocumentsStatus(userId);
+      res.json(response);
+    } catch (error) {
+      console.error("/documents/status error", error);
       res.status(500).json({ message: error.message });
     }
   });
@@ -89,6 +104,43 @@ module.exports = function createAiRouter({ express, multer }) {
 
       if (!findModel(model)) {
         return res.status(400).json({ message: `Unknown model: ${model}` });
+      }
+
+      // Check if all documents are indexed before summarizing
+      const statusResponse = await getDocumentsStatus(userId);
+      const documents = statusResponse?.documents || [];
+      
+      // Filter documents based on filenames if provided
+      const relevantDocs = filenames && filenames.length > 0
+        ? documents.filter(doc => filenames.includes(doc.name))
+        : documents;
+      
+      // Check if any documents are still indexing
+      const indexingDocs = relevantDocs.filter(doc => 
+        doc.status === DOCUMENT_STATUS.INDEXING || doc.status === DOCUMENT_STATUS.PENDING
+      );
+      if (indexingDocs.length > 0) {
+        return res.status(400).json({ 
+          message: "Some documents are still being indexed. Please wait for indexing to complete.",
+          indexing: indexingDocs.map(d => d.name)
+        });
+      }
+      
+      // Check if any documents failed indexing
+      const errorDocs = relevantDocs.filter(doc => doc.status === DOCUMENT_STATUS.ERROR);
+      if (errorDocs.length > 0) {
+        return res.status(400).json({ 
+          message: "Some documents failed to index. Please re-upload them or remove them from the selection.",
+          failed: errorDocs.map(d => ({ name: d.name, error: d.errorMessage || "Unknown error" }))
+        });
+      }
+      
+      // Check if there are any indexed documents to summarize
+      const indexedDocs = relevantDocs.filter(doc => doc.status === DOCUMENT_STATUS.INDEXED);
+      if (indexedDocs.length === 0) {
+        return res.status(400).json({ 
+          message: "No indexed documents available for summarization. Please upload and index documents first."
+        });
       }
 
       const summary = await summarizeDocuments({ model, filenames: filenames || [], userId });
