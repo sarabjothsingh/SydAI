@@ -29,7 +29,12 @@ class EmbeddingResponse(BaseModel):
 def get_model() -> BGEM3FlagModel:
   global _model_cache
   if _model_cache is None:
-    _model_cache = BGEM3FlagModel(MODEL_NAME, use_fp16=USE_FP16)
+    # Load model with proper device handling to avoid meta tensor issues
+    _model_cache = BGEM3FlagModel(
+      MODEL_NAME, 
+      use_fp16=USE_FP16,
+      device='cpu'  # Force CPU to avoid meta tensor issues
+    )
   return _model_cache
 
 
