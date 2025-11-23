@@ -1,0 +1,72 @@
+# Git
+.git
+.gitignore
+
+# Dependencies
+node_modules
+*/node_modules
+**/node_modules
+
+# Build outputs
+dist
+build
+.next
+out
+
+# Environment files
+.env
+.env.local
+.env.*.local
+*.env
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+logs
+*.log*
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv
+env
+*.egg-info
+
+# Documentation
+*.md
+!README.md
+docs
+
+# Test
+coverage
+.nyc_output
+*.test.js
+*.spec.js
+
+# Misc
+.cache
+tmp
+temp
+*.tmp
+
+# Kubernetes
+k8s/*.yaml
+k8s
+
+# SDD
+SDD_final
+SRS with Diagrams
