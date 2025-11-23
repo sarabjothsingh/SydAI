@@ -25,6 +25,10 @@ const createAiRouter = require(path.join(__dirname, "..", "ai_services", "router
 const aiRouter = createAiRouter({ express, multer });
 
 const app = express();
+
+// Trust proxy - MUST be before session middleware
+app.set('trust proxy', 1);
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -47,16 +51,20 @@ const DATABASE_SERVICE_URL = process.env.DATABASE_SERVICE_URL || "http://localho
 // Session middleware
 app.use(
   session({
+    name: 'sydai.sid', // Custom session cookie name
     secret: process.env.SESSION_SECRET || "secret",
-    resave: false,
-    saveUninitialized: false,
+    resave: true, // Force session save even if unmodified
+    saveUninitialized: true, // Save new sessions immediately
     cookie: {
       httpOnly: true,
       secure: false, // set true in production when using HTTPS
-      sameSite: "lax",
+      sameSite: 'lax',
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-      path: "/"
+      path: '/'
+      // Remove domain to allow cookie to work across proxy
     },
+    rolling: true, // Reset expiration on every response
+    proxy: true // Trust proxy headers from nginx
   })
 );
 app.use(passport.initialize());
@@ -177,12 +185,19 @@ passport.use(
   )
 );
 
-passport.serializeUser((user, done) => done(null, user._id));
+passport.serializeUser((user, done) => {
+  console.log(`[SERIALIZE] Saving user to session: ${user._id}`);
+  done(null, user._id);
+});
+
 passport.deserializeUser(async (id, done) => {
+  console.log(`[DESERIALIZE] Loading user from session: ${id}`);
   try {
     const { data: user } = await axios.get(`${DATABASE_SERVICE_URL}/users/${id}`);
+    console.log(`[DESERIALIZE] User found: ${user._id}`);
     done(null, user);
   } catch (err) {
+    console.log(`[DESERIALIZE] User not found: ${id}`, err.message);
     // 404 or error -> treat as no user
     done(null, null);
   }
@@ -191,6 +206,11 @@ passport.deserializeUser(async (id, done) => {
 /* ================= ROUTES ================= */
 app.get("/", (req, res) => {
   res.send("SydAI Auth Server Running");
+});
+
+// Health check endpoint (no auth required)
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
 /* --- GOOGLE ROUTES --- */
@@ -207,11 +227,20 @@ app.get(
   "/auth/google/callback",
   passport.authenticate("google", { failureRedirect: "/" }),
   (req, res) => {
+    console.log(`[GOOGLE CALLBACK] User authenticated: ${req.user?._id}, Session ID: ${req.sessionID}`);
     try {
       const token = req.user?.currentSession?.accessToken;
       setAuthCookie(res, token);
-    } catch (_) {}
-    return res.redirect(`${CLIENT_ORIGIN}/app`);
+      // Force session save before redirect
+      req.session.save((err) => {
+        if (err) console.error('[GOOGLE CALLBACK] Session save error:', err);
+        console.log(`[GOOGLE CALLBACK] Session saved, redirecting to ${CLIENT_ORIGIN}/app`);
+        return res.redirect(`${CLIENT_ORIGIN}/app`);
+      });
+    } catch (error) {
+      console.error('[GOOGLE CALLBACK] Error:', error);
+      return res.redirect(`${CLIENT_ORIGIN}/app`);
+    }
   }
 );
 
@@ -221,18 +250,33 @@ app.get(
   "/auth/github/callback",
   passport.authenticate("github", { failureRedirect: "/" }),
   (req, res) => {
+    console.log(`[GITHUB CALLBACK] User authenticated: ${req.user?._id}, Session ID: ${req.sessionID}`);
     try {
       const token = req.user?.currentSession?.accessToken;
       setAuthCookie(res, token);
-    } catch (_) {}
-    return res.redirect(`${CLIENT_ORIGIN}/app`);
+      // Force session save before redirect
+      req.session.save((err) => {
+        if (err) console.error('[GITHUB CALLBACK] Session save error:', err);
+        console.log(`[GITHUB CALLBACK] Session saved, redirecting to ${CLIENT_ORIGIN}/app`);
+        return res.redirect(`${CLIENT_ORIGIN}/app`);
+      });
+    } catch (error) {
+      console.error('[GITHUB CALLBACK] Error:', error);
+      return res.redirect(`${CLIENT_ORIGIN}/app`);
+    }
   }
 );
 
 // Session validation middleware (expiry-aware)
 async function checkSession(req, res, next) {
   try {
-    if (!req.user) return res.status(401).json({ authenticated: false, message: "Not logged in" });
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} - Session ID: ${req.sessionID || 'none'}, User: ${req.user ? req.user._id : 'none'}`);
+    
+    if (!req.user) {
+      console.log(`[${new Date().toISOString()}] No user in session for ${req.path}`);
+      return res.status(401).json({ authenticated: false, message: "Not logged in" });
+    }
+    
     const sess = req.user.currentSession;
     const now = new Date();
 
@@ -335,7 +379,8 @@ function setAuthCookie(res, token) {
     secure: false, // set true in production with HTTPS
     sameSite: "lax",
     maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-    path: "/"
+    path: "/",
+    domain: undefined // Allow cookie to work with port-forwarding
   });
 }
 
