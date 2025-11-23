@@ -35,7 +35,7 @@ jobs:
         with:
           filters: |
             frontend:
-              - 'client/**'
+              - 'frontend/**'
               - 'package.json'
             backend:
               - 'server/**'
@@ -51,13 +51,13 @@ jobs:
         component: [frontend, backend, ai]
         include:
           - component: frontend
-            path: client
+            path: frontend
             needs-build: ${{ needs.detect-changes.outputs.frontend == 'true' }}
           - component: backend
             path: server
             needs-build: ${{ needs.detect-changes.outputs.backend == 'true' }}
           - component: ai
-            path: ai_services/embedding_worker
+            path: ai_services
             needs-build: ${{ needs.detect-changes.outputs.ai == 'true' }}
     steps:
       - name: Checkout code
@@ -142,8 +142,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./client
-          file: ./client/Dockerfile
+          context: ./frontend
+          file: ./frontend/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -228,8 +228,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./ai_services/embedding_worker
-          file: ./ai_services/embedding_worker/Dockerfile
+          context: ./ai_services
+          file: ./ai_services/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
