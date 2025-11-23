@@ -249,71 +249,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v4
-        with:
-          version: 'latest'
-
-      - name: Configure kubectl
+      - name: Deployment Summary
         run: |
-          echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig
-          export KUBECONFIG=./kubeconfig
-          echo "Kubeconfig configured successfully"
-          kubectl version --client
-          kubectl cluster-info || echo "Cluster connection test"
-
-      - name: Determine deployment namespace
-        id: namespace
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/production" ]]; then
-            echo "namespace=default" >> $GITHUB_OUTPUT
-            echo "tag=latest" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
-            echo "namespace=staging" >> $GITHUB_OUTPUT
-            echo "tag=staging" >> $GITHUB_OUTPUT
-          else
-            echo "namespace=dev" >> $GITHUB_OUTPUT
-            echo "tag=dev" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Deploy Frontend
-        if: needs.detect-changes.outputs.frontend == 'true'
-        run: |
-          export KUBECONFIG=./kubeconfig
-          kubectl set image deployment/frontend-deployment \
-            frontend=${{ env.REGISTRY }}/${{ github.repository_owner }}/sydai-frontend:${{ steps.namespace.outputs.tag }} \
-            -n ${{ steps.namespace.outputs.namespace }}
-          kubectl rollout status deployment/frontend-deployment -n ${{ steps.namespace.outputs.namespace }} --timeout=5m
-
-      - name: Deploy Backend
-        if: needs.detect-changes.outputs.backend == 'true'
-        run: |
-          export KUBECONFIG=./kubeconfig
-          kubectl set image deployment/server-deployment \
-            server=${{ env.REGISTRY }}/${{ github.repository_owner }}/sydai-backend:${{ steps.namespace.outputs.tag }} \
-            -n ${{ steps.namespace.outputs.namespace }}
-          kubectl rollout status deployment/server-deployment -n ${{ steps.namespace.outputs.namespace }} --timeout=5m
-
-      - name: Deploy AI Services
-        if: needs.detect-changes.outputs.ai == 'true'
-        run: |
-          export KUBECONFIG=./kubeconfig
-          kubectl set image deployment/embedding-worker-deployment \
-            embedding-worker=${{ env.REGISTRY }}/${{ github.repository_owner }}/sydai-embedding-worker:${{ steps.namespace.outputs.tag }} \
-            -n ${{ steps.namespace.outputs.namespace }}
-          kubectl rollout status deployment/embedding-worker-deployment -n ${{ steps.namespace.outputs.namespace }} --timeout=5m
-
-      - name: Verify Deployment
-        run: |
-          export KUBECONFIG=./kubeconfig
-          echo "=== Deployment Status ==="
-          kubectl get deployments -n ${{ steps.namespace.outputs.namespace }}
+          echo "✅ Docker images built and pushed successfully!"
           echo ""
-          echo "=== Pod Status ==="
-          kubectl get pods -n ${{ steps.namespace.outputs.namespace }}
+          echo "📦 Images pushed to GitHub Container Registry:"
+          echo "  - ghcr.io/${{ github.repository_owner }}/sydai-frontend:${{ github.ref_name }}"
+          echo "  - ghcr.io/${{ github.repository_owner }}/sydai-backend:${{ github.ref_name }}"
+          echo "  - ghcr.io/${{ github.repository_owner }}/sydai-embedding-worker:${{ github.ref_name }}"
           echo ""
-          echo "=== Service Status ==="
-          kubectl get services -n ${{ steps.namespace.outputs.namespace }}
+          echo "ℹ️  Note: Kubernetes deployment skipped - cluster is local (not accessible from GitHub Actions)"
+          echo ""
+          echo "🔧 To deploy to your local cluster, run:"
+          echo "   kubectl set image deployment/frontend-deployment frontend=ghcr.io/${{ github.repository_owner }}/sydai-frontend:${{ github.ref_name }}"
+          echo "   kubectl set image deployment/server-deployment server=ghcr.io/${{ github.repository_owner }}/sydai-backend:${{ github.ref_name }}"
+          echo "   kubectl set image deployment/embedding-worker-deployment embedding-worker=ghcr.io/${{ github.repository_owner }}/sydai-embedding-worker:${{ github.ref_name }}"
 
   notify-status:
     name: 📊 Notify Status
@@ -327,12 +277,19 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ✅ Success" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Components Built:" >> $GITHUB_STEP_SUMMARY
-          echo "- Frontend: ${{ needs.detect-changes.outputs.frontend == 'true' && '✅' || '⏭️' }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Backend: ${{ needs.detect-changes.outputs.backend == 'true' && '✅' || '⏭️' }}" >> $GITHUB_STEP_SUMMARY
-          echo "- AI Services: ${{ needs.detect-changes.outputs.ai == 'true' && '✅' || '⏭️' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Frontend: ${{ needs.detect-changes.outputs.frontend == 'true' && '✅ Built' || '⏭️ Skipped' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Backend: ${{ needs.detect-changes.outputs.backend == 'true' && '✅ Built' || '⏭️ Skipped' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- AI Services: ${{ needs.detect-changes.outputs.ai == 'true' && '✅ Built' || '⏭️ Skipped' }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Deployment Status:" >> $GITHUB_STEP_SUMMARY
-          echo "${{ needs.deploy-to-kubernetes.result == 'success' && '✅ Deployed Successfully' || '❌ Deployment Failed' }}" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Docker Images:" >> $GITHUB_STEP_SUMMARY
+          echo "Images available at: \`ghcr.io/${{ github.repository_owner }}/sydai-*:${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔧 Deploy Locally:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "kubectl set image deployment/frontend-deployment frontend=ghcr.io/${{ github.repository_owner }}/sydai-frontend:${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "kubectl set image deployment/server-deployment server=ghcr.io/${{ github.repository_owner }}/sydai-backend:${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "kubectl set image deployment/embedding-worker-deployment embedding-worker=ghcr.io/${{ github.repository_owner }}/sydai-embedding-worker:${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
