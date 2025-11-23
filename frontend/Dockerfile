@@ -1,19 +1,19 @@
 # syntax=docker/dockerfile:1
 
-# Build: docker build -t sydai/frontend:latest -f frontend/Dockerfile frontend/
+# Build: docker build -t sydai/frontend:kind -f frontend/Dockerfile .
 
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy dependency manifests
-COPY package*.json ./
+# Copy dependency manifests from frontend directory
+COPY frontend/package*.json ./
 
 # Install dependencies
 RUN npm ci && npm cache clean --force
 
-# Copy source code
-COPY . .
+# Copy source code from frontend directory
+COPY frontend/ .
 
 # Build argument for API URL
 ARG VITE_API_BASE_URL=https://sydai.local/api
@@ -33,7 +33,7 @@ RUN addgroup -g 101 -S nginx 2>/dev/null || true && \
 COPY --from=builder --chown=nginx:nginx /app/dist /usr/share/nginx/html
 
 # Copy nginx configuration
-COPY --chown=nginx:nginx nginx.conf /etc/nginx/conf.d/default.conf
+COPY --chown=nginx:nginx frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Nginx runs as user nginx in alpine
 EXPOSE 80
