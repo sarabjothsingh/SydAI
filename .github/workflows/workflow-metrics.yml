@@ -1,0 +1,73 @@
+name: Workflow Metrics Exporter
+
+on:
+  workflow_run:
+    workflows: ["Multi-Branch CI/CD Pipeline"]
+    types:
+      - completed
+  schedule:
+    - cron: '*/5 * * * *'  # Every 5 minutes
+  workflow_dispatch:
+
+jobs:
+  export-metrics:
+    name: 📊 Export Build Metrics
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get workflow runs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            
+            // Get recent workflow runs
+            const { data: runs } = await github.rest.actions.listWorkflowRunsForRepo({
+              owner,
+              repo,
+              per_page: 100
+            });
+            
+            // Process metrics
+            const metrics = runs.workflow_runs.map(run => ({
+              id: run.id,
+              name: run.name,
+              branch: run.head_branch,
+              status: run.status,
+              conclusion: run.conclusion,
+              created_at: run.created_at,
+              updated_at: run.updated_at,
+              duration: new Date(run.updated_at) - new Date(run.created_at),
+              run_number: run.run_number
+            }));
+            
+            // Save metrics
+            const fs = require('fs');
+            fs.writeFileSync('workflow-metrics.json', JSON.stringify(metrics, null, 2));
+            
+            // Generate summary
+            const successCount = metrics.filter(m => m.conclusion === 'success').length;
+            const failureCount = metrics.filter(m => m.conclusion === 'failure').length;
+            const totalDuration = metrics.reduce((sum, m) => sum + m.duration, 0);
+            const avgDuration = totalDuration / metrics.length;
+            
+            core.summary
+              .addHeading('📊 Workflow Metrics Dashboard')
+              .addTable([
+                [{data: 'Metric', header: true}, {data: 'Value', header: true}],
+                ['Total Runs', metrics.length.toString()],
+                ['Success', `${successCount} (${((successCount/metrics.length)*100).toFixed(1)}%)`],
+                ['Failure', `${failureCount} (${((failureCount/metrics.length)*100).toFixed(1)}%)`],
+                ['Avg Duration', `${(avgDuration/1000/60).toFixed(2)} min`]
+              ])
+              .write();
+
+      - name: Upload metrics artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: workflow-metrics
+          path: workflow-metrics.json
+          retention-days: 30
