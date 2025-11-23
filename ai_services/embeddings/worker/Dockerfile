@@ -9,8 +9,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     dumb-init \
     && rm -rf /var/lib/apt/lists/*
 
-# Create app user for security
-RUN groupadd -r appuser && useradd -r -g appuser appuser
+# Create app user for security with home directory
+RUN groupadd -r appuser && useradd -r -g appuser -m -d /home/appuser appuser
+
+# Create HuggingFace cache directory
+RUN mkdir -p /home/appuser/.cache/huggingface && \
+    chown -R appuser:appuser /home/appuser
 
 WORKDIR /app
 
@@ -35,7 +39,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     HOST=0.0.0.0 \
     PORT=8001 \
     EMBEDDING_MODEL=BAAI/bge-m3 \
-    EMBEDDING_USE_FP16=true
+    EMBEDDING_USE_FP16=true \
+    HF_HOME=/home/appuser/.cache/huggingface \
+    TRANSFORMERS_CACHE=/home/appuser/.cache/huggingface/transformers
 
 EXPOSE 8001
 
