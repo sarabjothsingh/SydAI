@@ -26,10 +26,13 @@ async function handleJsonResponse<T>(response: Response): Promise<T> {
 }
 
 export async function fetchModels(): Promise<ModelConfig[]> {
+  console.log('[fetchModels] Making request to /ai/models with credentials');
   const response = await fetch(`/ai/models`, {
     credentials: "include",
   });
+  console.log('[fetchModels] Response status:', response.status, 'Headers:', Object.fromEntries(response.headers.entries()));
   const payload = await handleJsonResponse<{ models: ModelConfig[] }>(response);
+  console.log('[fetchModels] Success, got', payload.models.length, 'models');
   return payload.models;
 }
 
@@ -62,10 +65,13 @@ export async function queryAI(question: string, modelId: string): Promise<{ answ
 }
 
 export async function fetchDocuments(): Promise<StoredDocument[]> {
+  console.log('[fetchDocuments] Making request to /ai/documents with credentials');
   const response = await fetch(`/ai/documents`, {
     credentials: "include",
   });
+  console.log('[fetchDocuments] Response status:', response.status, 'Headers:', Object.fromEntries(response.headers.entries()));
   const payload = await handleJsonResponse<{ documents: StoredDocument[] }>(response);
+  console.log('[fetchDocuments] Success, got', payload.documents?.length || 0, 'documents');
   return payload.documents ?? [];
 }
 
