@@ -6,6 +6,8 @@ on:
   pull_request:
     branches: [ production, staging, dev ]
   workflow_dispatch:
+  schedule:
+    - cron: '*/10 * * * *'  # Run every 10 minutes
 
 env:
   REGISTRY: ghcr.io
@@ -16,16 +18,19 @@ jobs:
     name: 🔍 Detect Changes
     runs-on: ubuntu-latest
     outputs:
-      frontend: ${{ steps.filter.outputs.frontend }}
-      backend: ${{ steps.filter.outputs.backend }}
-      ai: ${{ steps.filter.outputs.ai }}
+      frontend: ${{ steps.filter.outputs.frontend || steps.force.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend || steps.force.outputs.backend }}
+      ai: ${{ steps.filter.outputs.ai || steps.force.outputs.ai }}
     steps:
       - name: 📥 Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       
       - name: 🔍 Check Changed Files
         uses: dorny/paths-filter@v3
         id: filter
+        if: github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
         with:
           filters: |
             frontend:
@@ -34,6 +39,14 @@ jobs:
               - 'server/**'
             ai:
               - 'ai_services/**'
+      
+      - name: 🔄 Force Build All (Scheduled/Manual)
+        id: force
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: |
+          echo "frontend=true" >> $GITHUB_OUTPUT
+          echo "backend=true" >> $GITHUB_OUTPUT
+          echo "ai=true" >> $GITHUB_OUTPUT
 
   lint-and-test:
     name: 🧪 Lint & Test (${{ matrix.component }})
@@ -79,7 +92,8 @@ jobs:
     if: |
       always() && 
       !cancelled() &&
-      (needs.detect-changes.outputs.frontend == 'true' || github.event_name == 'workflow_dispatch')
+      (needs.lint-and-test.result == 'success' || needs.lint-and-test.result == 'skipped') &&
+      needs.detect-changes.outputs.frontend == 'true'
     permissions:
       contents: read
       packages: write
@@ -127,7 +141,8 @@ jobs:
     if: |
       always() && 
       !cancelled() &&
-      (needs.detect-changes.outputs.backend == 'true' || github.event_name == 'workflow_dispatch')
+      (needs.lint-and-test.result == 'success' || needs.lint-and-test.result == 'skipped') &&
+      needs.detect-changes.outputs.backend == 'true'
     permissions:
       contents: read
       packages: write
@@ -175,7 +190,8 @@ jobs:
     if: |
       always() && 
       !cancelled() &&
-      (needs.detect-changes.outputs.ai == 'true' || github.event_name == 'workflow_dispatch')
+      (needs.lint-and-test.result == 'success' || needs.lint-and-test.result == 'skipped') &&
+      needs.detect-changes.outputs.ai == 'true'
     permissions:
       contents: read
       packages: write
