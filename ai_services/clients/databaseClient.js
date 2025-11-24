@@ -54,6 +54,11 @@ async function listDocuments(userId) {
   return handleResponse(response);
 }
 
+async function getDocumentsStatus(userId) {
+  const response = await fetch(`${getBaseUrl()}/documents/status?userId=${encodeURIComponent(userId)}`);
+  return handleResponse(response);
+}
+
 async function deleteDocument({ documentId, userId }) {
   const response = await fetch(
     `${getBaseUrl()}/documents/${encodeURIComponent(documentId)}?userId=${encodeURIComponent(userId)}`,
@@ -80,10 +85,21 @@ async function scrollVectors(payload) {
   return handleResponse(response);
 }
 
+async function updateDocumentStatus({ userId, documentName, status, errorMessage = null }) {
+  const response = await fetch(`${getBaseUrl()}/documents/update-status`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, documentName, status, errorMessage }),
+  });
+  return handleResponse(response);
+}
+
 module.exports = {
   ingestDocument,
   listDocuments,
+  getDocumentsStatus,
   deleteDocument,
   searchVectors,
   scrollVectors,
+  updateDocumentStatus,
 };

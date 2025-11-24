@@ -12,6 +12,8 @@ export type StoredDocument = {
   sizeBytes: number;
   chunkCount: number;
   status: string;
+  progress?: number;
+  errorMessage?: string;
   lastProcessedAt?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -73,6 +75,22 @@ export async function fetchDocuments(): Promise<StoredDocument[]> {
   const payload = await handleJsonResponse<{ documents: StoredDocument[] }>(response);
   console.log('[fetchDocuments] Success, got', payload.documents?.length || 0, 'documents');
   return payload.documents ?? [];
+}
+
+export async function fetchDocumentsStatus(): Promise<{
+  documents: StoredDocument[];
+  summary: {
+    total: number;
+    indexed: number;
+    indexing: number;
+    pending: number;
+    error: number;
+  };
+}> {
+  const response = await fetch(`/ai/documents/status`, {
+    credentials: "include",
+  });
+  return handleJsonResponse(response);
 }
 
 export async function deleteDocument(documentId: string): Promise<void> {
