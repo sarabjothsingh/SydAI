@@ -25,10 +25,10 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           
           # Count files
-          frontend_files=$(find frontend -type f 2>/dev/null | wc -l || echo "0")
-          backend_files=$(find server -type f 2>/dev/null | wc -l || echo "0")
-          ai_files=$(find ai_services -type f 2>/dev/null | wc -l || echo "0")
-          k8s_files=$(find k8s -type f -name "*.yaml" 2>/dev/null | wc -l || echo "0")
+          frontend_files=$(find frontend -type f | wc -l || echo "0")
+          backend_files=$(find server -type f | wc -l || echo "0")
+          ai_files=$(find ai_services -type f | wc -l || echo "0")
+          k8s_files=$(find k8s -type f -name "*.yaml" | wc -l || echo "0")
           
           echo "| Component | Files | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-----------|-------|--------|" >> $GITHUB_STEP_SUMMARY
@@ -69,9 +69,9 @@ jobs:
             echo "### 📋 Available Kubernetes Resources:" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             
-            deployments=$(find k8s -name "*deployment*.yaml" 2>/dev/null | wc -l)
-            services=$(find k8s -name "*service*.yaml" 2>/dev/null | wc -l)
-            configmaps=$(find k8s -name "*configmap*.yaml" 2>/dev/null | wc -l)
+            deployments=$(find k8s -name "*deployment*.yaml" | wc -l)
+            services=$(find k8s -name "*service*.yaml" | wc -l)
+            configmaps=$(find k8s -name "*configmap*.yaml" | wc -l)
             
             echo "- **Deployments:** $deployments configurations" >> $GITHUB_STEP_SUMMARY
             echo "- **Services:** $services configurations" >> $GITHUB_STEP_SUMMARY
@@ -96,7 +96,7 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             
             echo "### 📋 Active Workflows:" >> $GITHUB_STEP_SUMMARY
-            for workflow in .github/workflows/*.yml .github/workflows/*.yaml 2>/dev/null; do
+            for workflow in .github/workflows/*.yml .github/workflows/*.yaml; do
               if [ -f "$workflow" ]; then
                 name=$(basename "$workflow")
                 echo "- ✅ $name" >> $GITHUB_STEP_SUMMARY
@@ -114,21 +114,21 @@ jobs:
           
           # Count frontend lines
           if [ -d "frontend/src" ]; then
-            frontend_lines=$(find frontend/src -name "*.tsx" -o -name "*.ts" -o -name "*.jsx" -o -name "*.js" 2>/dev/null | xargs wc -l 2>/dev/null | tail -1 | awk '{print $1}' || echo "0")
+            frontend_lines=$(find frontend/src \( -name "*.tsx" -o -name "*.ts" -o -name "*.jsx" -o -name "*.js" \) | xargs wc -l 2>/dev/null | tail -1 | awk '{print $1}' || echo "0")
             echo "- **Frontend Code:** ${frontend_lines} lines" >> $GITHUB_STEP_SUMMARY
             total_lines=$((total_lines + frontend_lines))
           fi
           
           # Count backend lines
           if [ -d "server" ]; then
-            backend_lines=$(find server -name "*.js" -o -name "*.ts" 2>/dev/null | xargs wc -l 2>/dev/null | tail -1 | awk '{print $1}' || echo "0")
+            backend_lines=$(find server \( -name "*.js" -o -name "*.ts" \) | xargs wc -l 2>/dev/null | tail -1 | awk '{print $1}' || echo "0")
             echo "- **Backend Code:** ${backend_lines} lines" >> $GITHUB_STEP_SUMMARY
             total_lines=$((total_lines + backend_lines))
           fi
           
           # Count AI services lines
           if [ -d "ai_services" ]; then
-            ai_lines=$(find ai_services -name "*.py" 2>/dev/null | xargs wc -l 2>/dev/null | tail -1 | awk '{print $1}' || echo "0")
+            ai_lines=$(find ai_services -name "*.py" | xargs wc -l 2>/dev/null | tail -1 | awk '{print $1}' || echo "0")
             echo "- **AI Services Code:** ${ai_lines} lines" >> $GITHUB_STEP_SUMMARY
             total_lines=$((total_lines + ai_lines))
           fi
@@ -144,10 +144,10 @@ jobs:
           echo "### Frontend:" >> $GITHUB_STEP_SUMMARY
           if [ -f "frontend/package.json" ]; then
             echo "- ⚛️ React/TypeScript" >> $GITHUB_STEP_SUMMARY
-            if grep -q "vite" frontend/package.json 2>/dev/null; then
+            if grep -q "vite" frontend/package.json; then
               echo "- ⚡ Vite Build Tool" >> $GITHUB_STEP_SUMMARY
             fi
-            if grep -q "tailwind" frontend/package.json 2>/dev/null; then
+            if grep -q "tailwind" frontend/package.json; then
               echo "- 🎨 Tailwind CSS" >> $GITHUB_STEP_SUMMARY
             fi
           fi
@@ -156,7 +156,7 @@ jobs:
           echo "### Backend:" >> $GITHUB_STEP_SUMMARY
           if [ -f "server/package.json" ]; then
             echo "- 🟢 Node.js/Express" >> $GITHUB_STEP_SUMMARY
-            if grep -q "socket.io" server/package.json 2>/dev/null; then
+            if grep -q "socket.io" server/package.json; then
               echo "- 🔌 WebSocket (Socket.io)" >> $GITHUB_STEP_SUMMARY
             fi
           fi
@@ -165,10 +165,10 @@ jobs:
           echo "### AI Services:" >> $GITHUB_STEP_SUMMARY
           if [ -f "ai_services/requirements.txt" ]; then
             echo "- 🐍 Python" >> $GITHUB_STEP_SUMMARY
-            if grep -q "transformers" ai_services/requirements.txt 2>/dev/null; then
+            if grep -q "transformers" ai_services/requirements.txt; then
               echo "- 🤖 HuggingFace Transformers" >> $GITHUB_STEP_SUMMARY
             fi
-            if grep -q "torch" ai_services/requirements.txt 2>/dev/null; then
+            if grep -q "torch" ai_services/requirements.txt; then
               echo "- 🔥 PyTorch" >> $GITHUB_STEP_SUMMARY
             fi
           fi
