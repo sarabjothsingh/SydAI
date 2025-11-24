@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <!-- Circle background -->
+  <circle cx="170" cy="150" r="65" fill="none" stroke="#2C3E50" stroke-width="3"/>
+  
+  <!-- Book pages -->
+  <path d="M145 125 L145 175 L170 165 L195 175 L195 125 Z" fill="white" stroke="#2C3E50" stroke-width="2"/>
+  <line x1="145" y1="125" x2="170" y2="135" stroke="#2C3E50" stroke-width="2"/>
+  <line x1="170" y1="135" x2="195" y2="125" stroke="#2C3E50" stroke-width="2"/>
+  
+  <!-- Brain/AI symbol -->
+  <circle cx="170" cy="115" r="8" fill="#87CEEB" opacity="0.7"/>
+  <circle cx="165" cy="108" r="3" fill="#87CEEB" opacity="0.5"/>
+  <circle cx="175" cy="108" r="3" fill="#87CEEB" opacity="0.5"/>
+  <circle cx="170" cy="102" r="4" fill="#87CEEB" opacity="0.6"/>
+  
+  <!-- SYD text -->
+  <text x="230" y="160" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="#2C3E50">SYD</text>
+  
+  <!-- .ai text -->
+  <text x="350" y="160" font-family="Arial, sans-serif" font-size="60" font-weight="300" fill="#87CEEB">.ai</text>
+</svg>
