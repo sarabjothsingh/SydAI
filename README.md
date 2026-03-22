@@ -18,7 +18,7 @@ SYD is built to be fast, simple, and effective, eliminating the need to manually
 SYD is a full-stack application leveraging a modern combination of technologies to create a seamless and powerful AI experience.
 
 ### Frontend
-The user interface is built with **HTML**, **CSS**, and **JavaScript** to deliver a responsive and interactive experience. This provides the clean, modern chatbot design and the functionality for file management and model selection.
+The user interface is built with TypeScript, HTML, and CSS, delivering a responsive and interactive experience. It powers the clean chatbot-style design, file management features, authentication flows, and model selection functionality.
 
 ### Backend & AI Pipeline
 The server-side logic and the core AI functionalities are powered by **Python**. This is the primary language for the RAG pipeline. The backend is responsible for:
